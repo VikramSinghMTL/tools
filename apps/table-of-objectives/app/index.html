@@ -35,7 +35,7 @@
           <tr>
             <th scope="col">General Learning Objective</th>
             <th scope="col">Specific Learning Objective</th>
-            <th scope="col" width="16%">Knowledge</th>
+            <th scope="col" width="16%">Knowledge Dimension</th>
             <th scope="col" width="14%">Cognitive Process</th>
             <th scope="col">Actions</th>
           </tr>
@@ -95,32 +95,32 @@
           </template>
         </tbody>
       </table>
-    </div>
-
-    <button type="button" class="btn btn-primary"><i class="fas fa-plus"></i> Add GLO</button>
-    <button type="button" class="btn btn-primary"><i class="far fa-save"></i> Save</button>
-    <button type="button" class="btn btn-primary"><i class="fas fa-download"></i> Export</button>
-    <button type="button" class="btn btn-primary"><i class="fas fa-check"></i> Verify</button>
-    <hr>
-    <!-- <div class="alert alert-warning" role="alert">
-      1.1 Objectives should start with a verb. Your objective may be too wordy.
-    </div>
-    <div class="alert alert-warning" role="alert">
-      1.2 "Understand" is too general for a SLO. How will one show that one understands?
-    </div>
-    <div class="alert alert-warning" role="alert">
-      1.2 The Cognitive Process should not be higher than the GLO.
-    </div>
-    <div class="alert alert-danger" role="alert">
-      1.2 Please pick a value for Knowledge.
-    </div>
-    <div class="alert alert-warning" role="alert">
-      1.3 Objectives should be one sentence.
-    </div> -->
-    <div class="alert alert-success" role="alert">
-      Everything looks great!
-    </div>
-  </div>
+    
+      <button type="button" class="btn btn-primary" v-on:click="addGlo()"><i class="fas fa-plus"></i> Add GLO</button>
+      <button type="button" class="btn btn-primary" v-on:click="save()"><i class="far fa-save"></i> Save</button>
+      <button type="button" class="btn btn-primary"><i class="fas fa-upload"></i><input type="file" @change="load"></button>
+      <button type="button" class="btn btn-primary"><i class="fas fa-download"></i> Export</button>
+      <button type="button" class="btn btn-primary"><i class="fas fa-check"></i> Verify</button>
+      <hr>
+      <!-- <div class="alert alert-warning" role="alert">
+        1.1 Objectives should start with a verb. Your objective may be too wordy.
+      </div>
+      <div class="alert alert-warning" role="alert">
+        1.2 "Understand" is too general for a SLO. How will one show that one understands?
+      </div>
+      <div class="alert alert-warning" role="alert">
+        1.2 The Cognitive Process should not be higher than the GLO.
+      </div>
+      <div class="alert alert-danger" role="alert">
+        1.2 Please pick a value for Knowledge.
+      </div>
+      <div class="alert alert-warning" role="alert">
+        1.3 Objectives should be one sentence.
+      </div> -->
+      <div class="alert alert-success" role="alert">
+        Everything looks great!
+      </div>
+    </div> <!-- End of Vue app -->
   </div>
 
   <script src="js/vendor/modernizr-3.6.0.min.js"></script>
@@ -131,7 +131,7 @@
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
   <script src="js/plugins.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue@2.5.22/dist/vue.js"></script>
-  <script src="js/main.js"></script>
+  <script src="js/bundle.js"></script>
 
   <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->
   <script>

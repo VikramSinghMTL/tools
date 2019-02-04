@@ -1,6 +1,13 @@
-.table td.actions-cell
+.table 
 {
-    vertical-align: middle;
+    td.actions-cell
+    {
+        vertical-align: middle;
+    }
+    thead th
+    {
+        vertical-align: middle;
+    }
 }
 .actions
 {
@@ -8,6 +15,8 @@
     align-items: center;
     flex-direction: column;
 
+    // Can't use flexbox's "space-between" because table cells
+    // and flexbox don't play well together.
     *:not(:last-child)
     {
         margin-bottom: 0.50em;
