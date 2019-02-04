@@ -24,12 +24,16 @@ var app = new Vue({
       this.glos[gloId].slos.splice(sloId, 1);
     },
     promoteSlo: function(gloId, sloId) {
-      this.glos[gloId].slos.splice(sloId-1, 0, this.glos[gloId].slos[sloId]);
-      this.glos[gloId].slos.splice(sloId+1, 1);
+      this.glos[gloId].slos.splice(sloId - 1, 0, this.glos[gloId].slos[sloId]);
+      this.glos[gloId].slos.splice(sloId + 1, 1);
+      this.glos[gloId].slos[sloId].id = (gloId + 1) + "." + (sloId + 1);
+      this.glos[gloId].slos[sloId - 1].id = (gloId + 1) + "." + (sloId);
     },
     demoteSlo: function(gloId, sloId) {
-      this.glos[gloId].slos.splice(sloId+2, 0, this.glos[gloId].slos[sloId]);
+      this.glos[gloId].slos.splice(sloId + 2, 0, this.glos[gloId].slos[sloId]);
       this.glos[gloId].slos.splice(sloId, 1);
+      this.glos[gloId].slos[sloId].id = (gloId + 1) + "." + (sloId + 1);
+      this.glos[gloId].slos[sloId + 1].id = (gloId + 1) + "." + (sloId + 2);
     }
   }
 })

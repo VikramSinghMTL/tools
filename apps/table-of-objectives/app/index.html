@@ -33,11 +33,11 @@
       <table class="table table-bordered">
         <thead>
           <tr>
-            <th scope="col" width="29%">General Learning Objective</th>
-            <th scope="col" width="40%">Specific Learning Objective</th>
+            <th scope="col">General Learning Objective</th>
+            <th scope="col">Specific Learning Objective</th>
             <th scope="col" width="16%">Knowledge</th>
-            <th scope="col" width="15%">Cognitive Process</th>
-            <th scope="col" width="10%">Actions</th>
+            <th scope="col" width="14%">Cognitive Process</th>
+            <th scope="col">Actions</th>
           </tr>
         </thead>
         <tbody id="list">
@@ -45,7 +45,7 @@
             <tr v-for="(slo, sloIndex) in glo.slos">
               <td v-if="sloIndex === 0" :rowspan="glo.slos.length + 1">
                 <div class="form-group row">
-                  <label class="col-sm-2 col-form-label">{{ gloIndex + 1 }}</label>
+                  <input disabled v-model="glo.id" class="col-sm-2 col-form-label"></input>
                   <div class="col-sm-10">
                     <textarea v-model="glo.description" class="form-control"></textarea>
                   </div>
@@ -53,7 +53,7 @@
               </td>
               <td>
                 <div class="form-group row post">
-                  <label class="col-sm-2 col-form-label handle">{{ gloIndex + 1 }}.{{ sloIndex + 1 }}</label>
+                  <input disabled v-model="slo.id" class="col-sm-2 col-form-label handle"></input>
                   <div class="col-sm-10">
                     <textarea v-model="slo.description" class="form-control" rows="3"></textarea>
                   </div>
