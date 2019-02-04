@@ -22,8 +22,13 @@
     "gulp-uglify-es": "^1.0.4"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "browserify app/js/main.js -o app/js/bundle.js",
+    "watch": "watchify app/js/main.js -o app/js/bundle.js"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "browserify": "^16.2.3",
+    "watchify": "^3.11.0"
+  }
 }
