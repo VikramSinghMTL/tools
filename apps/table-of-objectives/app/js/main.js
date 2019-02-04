@@ -1,16 +1,27 @@
-var actual_JSON;
-
-loadJSON(function (response) {
-  // Parse JSON string into object
-  actual_JSON = JSON.parse(response);
-});
-
 var app = new Vue({
   el: '#app',
   data: {
-    glos: actual_JSON
+    glos: {}
+  },
+  mounted: function() {
+    var self = this;
+    this.loadJSON(function (response) {
+      self.glos = JSON.parse(response);
+    });
   },
   methods: {
+    loadJSON: function(callback) {
+      var xobj = new XMLHttpRequest();
+      xobj.overrideMimeType("application/json");
+      xobj.open('GET', 'js/data.json', false); // Replace 'my_data' with the path to your file
+      xobj.onreadystatechange = function () {
+        if (xobj.readyState == 4 && xobj.status == "200") {
+          // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
+          callback(xobj.responseText);
+        }
+      };
+      xobj.send(null);
+    },
     addSlo: function(gloId) {
       var sloId = gloId + "." + (this.glos[gloId-1].slos.length + 1);
       this.glos[gloId-1].slos.push({
@@ -37,20 +48,3 @@ var app = new Vue({
     }
   }
 })
-
-function $(id) {
-  return document.getElementById(id);
-}
-
-function loadJSON(callback) {
-  var xobj = new XMLHttpRequest();
-  xobj.overrideMimeType("application/json");
-  xobj.open('GET', 'js/data.json', false); // Replace 'my_data' with the path to your file
-  xobj.onreadystatechange = function () {
-    if (xobj.readyState == 4 && xobj.status == "200") {
-      // Required use of an anonymous callback as .open will NOT return a value but simply returns undefined in asynchronous mode
-      callback(xobj.responseText);
-    }
-  };
-  xobj.send(null);
-}
