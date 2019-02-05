@@ -1,9 +1,13 @@
+var pos = require('pos');
+var blooms = require('./blooms.js');
+
 var app = new Vue
 ({
   el: '#app',
   data:
   {
-    glos: {}
+    glos: {},
+    alerts: []
   },
   mounted: function()
   {
@@ -121,6 +125,96 @@ var app = new Vue
       };
 
       fileReader.readAsText(fileToLoad, "UTF-8");
+    },
+    verify: function()
+    {
+      var self = this;
+      var verbTags = ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ', 'NN'];
+      var bloomsVerbs = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'];
+      var lexer = new pos.Lexer();
+      var tagger = new pos.Tagger();
+
+      self.alerts = [];
+
+      for (var i = 0; i < self.glos.length; i++)
+      {
+        var glo = self.glos[i];
+
+        if (!glo.description)
+        {
+          this.addAlert(glo.id, "danger", "Description should not be blank.");
+        }
+        else
+        {
+          var words = lexer.lex(self.glos[i].description);
+          var taggedWords = tagger.tag(words);
+          var sentences = glo.description.match(/\w[.?!](\s|$)/g);
+
+          if (verbTags.indexOf(taggedWords[0][1]) == -1)
+          {
+            this.addAlert(glo.id, "warning", "Objectives should start with a verb. Your objective may be too wordy.");
+          }
+
+          if (sentences && sentences.length > 1)
+          {
+            this.addAlert(glo.id, "warning", "Objectives should be one sentence max.")
+          }
+        }
+
+        for (var j = 0; j < self.glos[i].slos.length; j++)
+        {
+          var slo = self.glos[i].slos[j];
+          
+          if (!slo.knowledge)
+          {
+            this.addAlert(slo.id, "danger", "Knowledge Dimension should not be blank.");
+          }
+
+          if (!slo.cognitive)
+          {
+            this.addAlert(slo.id, "danger", "Cognitive Process should not be blank.");
+          }
+
+          if (!slo.description)
+          {
+            this.addAlert(slo.id, "danger", "Description should not be blank.");
+            continue;
+          }
+
+          var words = lexer.lex(slo.description);
+          var taggedWords = tagger.tag(words);
+          var sentences = slo.description.match(/\w[.?!](\s|$)/g);
+
+          if (verbTags.indexOf(taggedWords[0][1]) == -1)
+          {
+            this.addAlert(slo.id, "warning", "Objectives should start with a verb. Your objective may be too wordy.");
+          }
+
+          if (bloomsVerbs.indexOf(taggedWords[0][0].toLowerCase()) != -1)
+          {
+            this.addAlert(slo.id, "warning", "\"" + taggedWords[0][0] + "\" is too general for a SLO. How will one show that one can " + bloomsVerbs[bloomsVerbs.indexOf(taggedWords[0][0].toLowerCase())] + "?");
+          }
+
+          if (sentences && sentences.length > 1)
+          {
+            this.addAlert(slo.id, "warning", "Objectives should be one sentence max.")
+          }
+        }
+      }
+      
+      if (self.alerts.length == 0)
+      {
+        this.addAlert("", "success", "Everything looks great :)");
+      }
+    },
+    addAlert: function(id, type, description)
+    {
+      this.alerts.push(
+      {
+        "id": id,
+        "type": "alert-" + type,
+        "description": description 
+      })
     }
   }
 })

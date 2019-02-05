@@ -5,8 +5,8 @@
         "slos": [
             {
                 "id": 1.1,
-                "description": "Situate the creation of the Cegep system into a historical context.",
-                "knowledge": "factual",
+                "description": "Understand the creation of the Cegep system into a historical context.",
+                "knowledge": "",
                 "cognitive": "remember"
             },
             {
