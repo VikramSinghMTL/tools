@@ -1,13 +1,15 @@
 var pos = require('pos');
 var blooms = require('./blooms.js');
+require('vue-textarea-autosize');
 
-var app = new Vue
+new Vue
 ({
   el: '#app',
   data:
   {
     glos: {},
-    alerts: []
+    alerts: [],
+    blooms: {}
   },
   mounted: function()
   {
@@ -16,9 +18,19 @@ var app = new Vue
     {
       self.glos = JSON.parse(response);
     });
+    this.convertBloomsToLowerCase();
   },
   methods:
   {
+    convertBloomsToLowerCase: function()
+    {
+      var self = this;
+
+      for (var i = 0; i < Object.keys(blooms).length; i++)
+      {
+        self.blooms[Object.keys(blooms)[i].toLowerCase()] = Object.values(blooms)[i].join('~').toLowerCase().split('~');
+      }
+    },
     loadJSON: function(callback)
     {
       var xobj = new XMLHttpRequest();
@@ -130,7 +142,7 @@ var app = new Vue
     {
       var self = this;
       var verbTags = ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ', 'NN'];
-      var bloomsVerbs = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'];
+      var bloomsLevels = Object.keys(self.blooms);
       var lexer = new pos.Lexer();
       var tagger = new pos.Tagger();
 
@@ -139,10 +151,12 @@ var app = new Vue
       for (var i = 0; i < self.glos.length; i++)
       {
         var glo = self.glos[i];
+        var gloVerb;
 
         if (!glo.description)
         {
           this.addAlert(glo.id, "danger", "Description should not be blank.");
+          continue;
         }
         else
         {
@@ -153,6 +167,10 @@ var app = new Vue
           if (verbTags.indexOf(taggedWords[0][1]) == -1)
           {
             this.addAlert(glo.id, "warning", "Objectives should start with a verb. Your objective may be too wordy.");
+          }
+          else
+          {
+            gloVerb = taggedWords[0][0];
           }
 
           if (sentences && sentences.length > 1)
@@ -184,20 +202,35 @@ var app = new Vue
           var words = lexer.lex(slo.description);
           var taggedWords = tagger.tag(words);
           var sentences = slo.description.match(/\w[.?!](\s|$)/g);
+          var sloVerb;
 
           if (verbTags.indexOf(taggedWords[0][1]) == -1)
           {
             this.addAlert(slo.id, "warning", "Objectives should start with a verb. Your objective may be too wordy.");
           }
-
-          if (bloomsVerbs.indexOf(taggedWords[0][0].toLowerCase()) != -1)
+          else
           {
-            this.addAlert(slo.id, "warning", "\"" + taggedWords[0][0] + "\" is too general for a SLO. How will one show that one can " + bloomsVerbs[bloomsVerbs.indexOf(taggedWords[0][0].toLowerCase())] + "?");
+            sloVerb = taggedWords[0][0];
+          }
+
+          if (bloomsLevels.indexOf(sloVerb.toLowerCase()) != -1)
+          {
+            this.addAlert(slo.id, "warning", "\"" + sloVerb + "\" is too general for a SLO. How will one show that one can " + bloomsLevels[bloomsLevels.indexOf(sloVerb.toLowerCase())] + "?");
           }
 
           if (sentences && sentences.length > 1)
           {
             this.addAlert(slo.id, "warning", "Objectives should be one sentence max.")
+          }
+
+          if (this.bloomsLevelToNumeric(slo.cognitive) > this.bloomsLevelToNumeric(this.bloomsVerbLookup(gloVerb)))
+          {
+            this.addAlert(slo.id, "warning", "The Cognitive Process (" + slo.cognitive + ") should not be higher than the GLO (" + gloVerb + ")");
+          }
+
+          if (this.bloomsLevelToNumeric(slo.cognitive) != this.bloomsLevelToNumeric(this.bloomsVerbLookup(sloVerb)))
+          {
+            this.addAlert(slo.id, "warning", "The SLO's action verb (" + sloVerb + ") should match the Cognitive Process (" + slo.cognitive + ")");
           }
         }
       }
@@ -215,6 +248,30 @@ var app = new Vue
         "type": "alert-" + type,
         "description": description 
       })
+    },
+    bloomsVerbLookup: function(verb)
+    {
+      var self = this;
+
+      if (Object.keys(self.blooms).indexOf(verb.toLowerCase()) != -1)
+      {
+        return verb;
+      }
+
+      for (var i = 0; i < Object.values(self.blooms).length; i++)
+      {
+        if (Object.values(self.blooms)[i].indexOf(verb.toLowerCase()) != -1)
+        {
+          return Object.keys(self.blooms)[i];
+        }
+      }
+
+      return "not found";
+    },
+    bloomsLevelToNumeric: function(level)
+    {
+      return Object.keys(this.blooms).indexOf(level.toLowerCase());
     }
   }
 })
+

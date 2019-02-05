@@ -5,62 +5,44 @@
         "slos": [
             {
                 "id": 1.1,
-                "description": "Understand the creation of the Cegep system into a historical context.",
-                "knowledge": "",
-                "cognitive": "remember"
+                "description": "Situate the creation of the Cegep system into a historical context.",
+                "knowledge": "conceptual",
+                "cognitive": "understand"
             },
             {
                 "id": 1.2,
-                "description": "2",
-                "knowledge": "procedural",
+                "description": "Explain the unique role of the Cegeps in Quebec's educational ladder in relation to career and pre-university programs.",
+                "knowledge": "conceptual",
                 "cognitive": "understand"
             },
             {
                 "id": 1.3,
-                "description": "3",
-                "knowledge": "procedural",
-                "cognitive": "understand"
+                "description": "Define what is meant by a CORE curriculum (formation fondamentale or general education).",
+                "knowledge": "factual",
+                "cognitive": "remember"
             },
             {
                 "id": 1.4,
-                "description": "4",
-                "knowledge": "procedural",
-                "cognitive": "understand"
-            }
-        ]
-    },
-    {
-        "id": 2,
-        "description": "The second GLO.",
-        "slos": [
-            {
-                "id": 2.1,
-                "description": "Situate the creation of the Cegep system into a historical context.",
+                "description": "Examine your college's Mission Statement.",
                 "knowledge": "conceptual",
-                "cognitive": "analyze"
-            },
-            {
-                "id": 2.2,
-                "description": "Situate the creation of the Cegep system into a historical context.",
-                "knowledge": "metacognitive",
                 "cognitive": "evaluate"
             }
         ]
     },
     {
-        "id": 3,
-        "description": "The second GLO.",
+        "id": 2,
+        "description": "Examine the assumptions underlying an educational philosophy that promotes a competency/ability-based education and a program approach to college teaching.",
         "slos": [
             {
-                "id": 3.1,
-                "description": "Situate the creation of the Cegep system into a historical context.",
+                "id": 2.1,
+                "description": "Define and explain the concepts of competence or ability, of a program approach and a competency or ability-based approach to education.",
                 "knowledge": "conceptual",
-                "cognitive": "analyze"
+                "cognitive": "remember"
             },
             {
-                "id": 3.2,
-                "description": "Situate the creation of the Cegep system into a historical context.",
-                "knowledge": "metacognitive",
+                "id": 2.2,
+                "description": "Evaluate the principles underlying Competency-Based Education (CBE) to determine if they are consistent with current thinking in higher education about what constitutes \"quality\" in teaching and learning, or whether CBE represents an approach to higher education that is unique to Cegeps in Quebec.",
+                "knowledge": "conceptual",
                 "cognitive": "evaluate"
             }
         ]

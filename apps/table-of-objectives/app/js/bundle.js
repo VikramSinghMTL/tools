@@ -3,6 +3,7 @@ module.exports = {
     "Remember": [
         "Choose",
         "Define",
+        "Describe",
         "Find",
         "How",
         "Label",
@@ -37,6 +38,7 @@ module.exports = {
         "Relate",
         "Rephrase",
         "Show",
+        "Situate",
         "Summarize",
         "Translate"
     ],
@@ -55,30 +57,6 @@ module.exports = {
         "Select",
         "Solve",
         "Utilize"
-    ],
-    "Evaluate": [
-        "Analyze",
-        "Assume",
-        "Categorize",
-        "Classify",
-        "Compare",
-        "Conclusion",
-        "Contrast",
-        "Discover",
-        "Dissect",
-        "Distinguish",
-        "Divide",
-        "Examine",
-        "Function",
-        "Inference",
-        "Inspect",
-        "List",
-        "Motive",
-        "Relationships",
-        "Simplify",
-        "Survey",
-        "Test",
-        "Theme"
     ],
     "Analyze": [
         "Agree",
@@ -115,6 +93,30 @@ module.exports = {
         "Select",
         "Support",
         "Value"
+    ],
+    "Evaluate": [
+        "Analyze",
+        "Assume",
+        "Categorize",
+        "Classify",
+        "Compare",
+        "Conclusion",
+        "Contrast",
+        "Discover",
+        "Dissect",
+        "Distinguish",
+        "Divide",
+        "Examine",
+        "Function",
+        "Inference",
+        "Inspect",
+        "List",
+        "Motive",
+        "Relationships",
+        "Simplify",
+        "Survey",
+        "Test",
+        "Theme"
     ],
     "Create": [
         "Adapt",
@@ -156,14 +158,16 @@ module.exports = {
 },{}],2:[function(require,module,exports){
 var pos = require('pos');
 var blooms = require('./blooms.js');
+require('vue-textarea-autosize');
 
-var app = new Vue
+new Vue
 ({
   el: '#app',
   data:
   {
     glos: {},
-    alerts: []
+    alerts: [],
+    blooms: {}
   },
   mounted: function()
   {
@@ -172,9 +176,19 @@ var app = new Vue
     {
       self.glos = JSON.parse(response);
     });
+    this.convertBloomsToLowerCase();
   },
   methods:
   {
+    convertBloomsToLowerCase: function()
+    {
+      var self = this;
+
+      for (var i = 0; i < Object.keys(blooms).length; i++)
+      {
+        self.blooms[Object.keys(blooms)[i].toLowerCase()] = Object.values(blooms)[i].join('~').toLowerCase().split('~');
+      }
+    },
     loadJSON: function(callback)
     {
       var xobj = new XMLHttpRequest();
@@ -286,7 +300,7 @@ var app = new Vue
     {
       var self = this;
       var verbTags = ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ', 'NN'];
-      var bloomsVerbs = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'];
+      var bloomsLevels = Object.keys(self.blooms);
       var lexer = new pos.Lexer();
       var tagger = new pos.Tagger();
 
@@ -295,10 +309,12 @@ var app = new Vue
       for (var i = 0; i < self.glos.length; i++)
       {
         var glo = self.glos[i];
+        var gloVerb;
 
         if (!glo.description)
         {
           this.addAlert(glo.id, "danger", "Description should not be blank.");
+          continue;
         }
         else
         {
@@ -309,6 +325,10 @@ var app = new Vue
           if (verbTags.indexOf(taggedWords[0][1]) == -1)
           {
             this.addAlert(glo.id, "warning", "Objectives should start with a verb. Your objective may be too wordy.");
+          }
+          else
+          {
+            gloVerb = taggedWords[0][0];
           }
 
           if (sentences && sentences.length > 1)
@@ -340,20 +360,35 @@ var app = new Vue
           var words = lexer.lex(slo.description);
           var taggedWords = tagger.tag(words);
           var sentences = slo.description.match(/\w[.?!](\s|$)/g);
+          var sloVerb;
 
           if (verbTags.indexOf(taggedWords[0][1]) == -1)
           {
             this.addAlert(slo.id, "warning", "Objectives should start with a verb. Your objective may be too wordy.");
           }
-
-          if (bloomsVerbs.indexOf(taggedWords[0][0].toLowerCase()) != -1)
+          else
           {
-            this.addAlert(slo.id, "warning", "\"" + taggedWords[0][0] + "\" is too general for a SLO. How will one show that one can " + bloomsVerbs[bloomsVerbs.indexOf(taggedWords[0][0].toLowerCase())] + "?");
+            sloVerb = taggedWords[0][0];
+          }
+
+          if (bloomsLevels.indexOf(sloVerb.toLowerCase()) != -1)
+          {
+            this.addAlert(slo.id, "warning", "\"" + sloVerb + "\" is too general for a SLO. How will one show that one can " + bloomsLevels[bloomsLevels.indexOf(sloVerb.toLowerCase())] + "?");
           }
 
           if (sentences && sentences.length > 1)
           {
             this.addAlert(slo.id, "warning", "Objectives should be one sentence max.")
+          }
+
+          if (this.bloomsLevelToNumeric(slo.cognitive) > this.bloomsLevelToNumeric(this.bloomsVerbLookup(gloVerb)))
+          {
+            this.addAlert(slo.id, "warning", "The Cognitive Process (" + slo.cognitive + ") should not be higher than the GLO (" + gloVerb + ")");
+          }
+
+          if (this.bloomsLevelToNumeric(slo.cognitive) != this.bloomsLevelToNumeric(this.bloomsVerbLookup(sloVerb)))
+          {
+            this.addAlert(slo.id, "warning", "The SLO's action verb (" + sloVerb + ") should match the Cognitive Process (" + slo.cognitive + ")");
           }
         }
       }
@@ -371,11 +406,35 @@ var app = new Vue
         "type": "alert-" + type,
         "description": description 
       })
+    },
+    bloomsVerbLookup: function(verb)
+    {
+      var self = this;
+
+      if (Object.keys(self.blooms).indexOf(verb.toLowerCase()) != -1)
+      {
+        return verb;
+      }
+
+      for (var i = 0; i < Object.values(self.blooms).length; i++)
+      {
+        if (Object.values(self.blooms)[i].indexOf(verb.toLowerCase()) != -1)
+        {
+          return Object.keys(self.blooms)[i];
+        }
+      }
+
+      return "not found";
+    },
+    bloomsLevelToNumeric: function(level)
+    {
+      return Object.keys(this.blooms).indexOf(level.toLowerCase());
     }
   }
 })
 
-},{"./blooms.js":1,"pos":5}],3:[function(require,module,exports){
+
+},{"./blooms.js":1,"pos":5,"vue-textarea-autosize":8}],3:[function(require,module,exports){
 /*
   Transformation rules for Brill's POS tagger
   Copyright (C) 2015 Hugo W.L. ter Doest
@@ -298533,4 +298592,8 @@ module.exports = {
     ]
 };
 
+},{}],8:[function(require,module,exports){
+(function (global){
+module.exports=function(modules){function __webpack_require__(moduleId){if(installedModules[moduleId])return installedModules[moduleId].exports;var module=installedModules[moduleId]={i:moduleId,l:!1,exports:{}};return modules[moduleId].call(module.exports,module,module.exports,__webpack_require__),module.l=!0,module.exports}var installedModules={};return __webpack_require__.m=modules,__webpack_require__.c=installedModules,__webpack_require__.i=function(value){return value},__webpack_require__.d=function(exports,name,getter){__webpack_require__.o(exports,name)||Object.defineProperty(exports,name,{configurable:!1,enumerable:!0,get:getter})},__webpack_require__.n=function(module){var getter=module&&module.__esModule?function(){return module.default}:function(){return module};return __webpack_require__.d(getter,"a",getter),getter},__webpack_require__.o=function(object,property){return Object.prototype.hasOwnProperty.call(object,property)},__webpack_require__.p="",__webpack_require__(__webpack_require__.s=1)}([function(module,exports,__webpack_require__){var Component=__webpack_require__(3)(__webpack_require__(2),__webpack_require__(4),null,null);module.exports=Component.exports},function(module,__webpack_exports__,__webpack_require__){"use strict";function install(Vue){Vue.component("textarea-autosize",__WEBPACK_IMPORTED_MODULE_0__components_TextareaAutosize_vue___default.a)}Object.defineProperty(__webpack_exports__,"__esModule",{value:!0}),__webpack_exports__.install=install;var __WEBPACK_IMPORTED_MODULE_0__components_TextareaAutosize_vue__=__webpack_require__(0),__WEBPACK_IMPORTED_MODULE_0__components_TextareaAutosize_vue___default=__webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0__components_TextareaAutosize_vue__);__webpack_require__.d(__webpack_exports__,"TextareaAutosize",function(){return __WEBPACK_IMPORTED_MODULE_0__components_TextareaAutosize_vue___default.a});var plugin={version:"1.0.4",install:install};__webpack_exports__.default=plugin;var GlobalVue=null;"undefined"!=typeof window?GlobalVue=window.Vue:"undefined"!=typeof global&&(GlobalVue=global.Vue),GlobalVue&&GlobalVue.use(plugin)},function(module,__webpack_exports__,__webpack_require__){"use strict";Object.defineProperty(__webpack_exports__,"__esModule",{value:!0}),__webpack_exports__.default={name:"TextareaAutosize",created:function(){this.updateVal()},mounted:function(){this.resize()},props:{value:{type:[String,Number],default:""},autosize:{type:Boolean,default:!0},minHeight:{type:[Number],default:null},maxHeight:{type:[Number],default:null},important:{type:[Boolean,Array],default:!1}},data:function(){return{val:null,maxHeightScroll:!1}},computed:{computedStyles:function(){var objStyles={};return this.autosize&&(objStyles.resize=this.isResizeImportant?"none !important":"none",this.maxHeightScroll||(objStyles.overflow=this.isOverflowImportant?"hidden !important":"hidden")),objStyles},isResizeImportant:function(){var imp=this.important;return!0===imp||Array.isArray(imp)&&imp.includes("resize")},isOverflowImportant:function(){var imp=this.important;return!0===imp||Array.isArray(imp)&&imp.includes("overflow")},isHeightImportant:function(){var imp=this.important;return!0===imp||Array.isArray(imp)&&imp.includes("height")}},methods:{updateVal:function(){this.val=this.value},resize:function(){var important=this.isHeightImportant?"important":void 0;this.$el.style.setProperty("height","auto",important);var contentHeight=this.$el.scrollHeight+1;this.minHeight&&(contentHeight=contentHeight<this.minHeight?this.minHeight:contentHeight),this.maxHeight&&(contentHeight>this.maxHeight?(contentHeight=this.maxHeight,this.maxHeightScroll=!0):this.maxHeightScroll=!1);var heightVal=contentHeight+"px";return this.$el.style.setProperty("height",heightVal,important),this}},watch:{value:function(){this.updateVal()},val:function(_val){this.$nextTick(this.resize),this.$emit("input",_val)}}}},function(module,exports){module.exports=function(rawScriptExports,compiledTemplate,scopeId,cssModules){var esModule,scriptExports=rawScriptExports=rawScriptExports||{},type=typeof rawScriptExports.default;"object"!==type&&"function"!==type||(esModule=rawScriptExports,scriptExports=rawScriptExports.default);var options="function"==typeof scriptExports?scriptExports.options:scriptExports;if(compiledTemplate&&(options.render=compiledTemplate.render,options.staticRenderFns=compiledTemplate.staticRenderFns),scopeId&&(options._scopeId=scopeId),cssModules){var computed=options.computed||(options.computed={});Object.keys(cssModules).forEach(function(key){var module=cssModules[key];computed[key]=function(){return module}})}return{esModule:esModule,exports:scriptExports,options:options}}},function(module,exports){module.exports={render:function(){var _vm=this,_h=_vm.$createElement;return(_vm._self._c||_h)("textarea",{directives:[{name:"model",rawName:"v-model",value:_vm.val,expression:"val"}],style:_vm.computedStyles,domProps:{value:_vm.val},on:{focus:_vm.resize,input:function($event){$event.target.composing||(_vm.val=$event.target.value)}}})},staticRenderFns:[]}}]);
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}]},{},[2]);

@@ -20,7 +20,8 @@
     "gulp-sass": "^4.0.2",
     "gulp-uglify": "^3.0.1",
     "gulp-uglify-es": "^1.0.4",
-    "pos": "^0.4.2"
+    "pos": "^0.4.2",
+    "vue-textarea-autosize": "^1.0.4"
   },
   "scripts": {
     "build": "browserify app/js/main.js -o app/js/bundle.js",
