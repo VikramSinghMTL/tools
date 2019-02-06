@@ -27,9 +27,18 @@
   <div class="container">
     <h1>Table of Objectives Builder</h1>
     
-    <p><input class="form-control" placeholder="Enter name of course" value="College Teaching and Course Design"></p>
-    
     <div id="app">
+      <p><input class="form-control" placeholder="Enter name of course" v-model="title"></p>
+      <p>
+      <textarea-autosize
+          class="form-control"
+          placeholder="Enter course description"
+          v-model="description"
+          :min-height="30"
+          :max-height="350"
+          @blur.native="onBlurTextarea"
+      ></textarea-autosize>
+      </p>
       <table id="table-of-objectives" class="table table-bordered">
         <thead>
           <tr>
@@ -37,12 +46,13 @@
             <th scope="col">Specific Learning Objective</th>
             <th scope="col" width="16%">Knowledge Dimension</th>
             <th scope="col" width="14%">Cognitive Process</th>
-            <th scope="col">Actions</th>
+            <th scope="col">SLO Actions</th>
+            <th scope="col">GLO Actions</th>
           </tr>
         </thead>
-        <tbody name="fade" is="transition-group">
+        <tbody name="fade">
           <template v-for="(glo, gloIndex) in glos">
-            <tr v-for="(slo, sloIndex) in glo.slos" :key="slo.id">
+            <tr v-for="(slo, sloIndex) in glo.slos">
               <td v-if="sloIndex === 0" :rowspan="glo.slos.length + 1">
                 <div class="form-group row">
                   <input disabled v-model="glo.id" class="col-sm-2 col-form-label"></input>
@@ -64,7 +74,7 @@
                   <div class="col-sm-10">
                       <textarea-autosize
                         class="form-control"
-                        placeholder="Type GLO description here."
+                        placeholder="Type SLO description here."
                         v-model="slo.description"
                         :min-height="30"
                         :max-height="350"
@@ -100,6 +110,13 @@
                   <button type="button" class="btn btn-danger" v-on:click="removeSlo(gloIndex, sloIndex)"><i class="fas fa-trash-alt"></i></button>
                 </div>
               </td>
+              <td class="glo-actions-cell" :rowspan="glo.slos.length + 1" v-if="sloIndex === 0">
+                <div class="actions">
+                  <button type="button" class="btn btn-primary" v-if="gloIndex > 0" v-on:click="promoteGlo(gloIndex)"><i class="fas fa-arrow-up"></i></button>
+                  <button type="button" class="btn btn-primary" v-if="gloIndex < glos.length - 1" v-on:click="demoteGlo(gloIndex)"><i class="fas fa-arrow-down"></i></button>
+                  <button type="button" class="btn btn-danger" v-on:click="removeGlo(gloIndex)"><i class="fas fa-trash-alt"></i></button>
+                </div>
+              </td>
             </tr>
             <tr :key="glo.id">
               <td class="add-slo" colspan="4">
@@ -107,7 +124,6 @@
               </td>
             </tr>
           </template>
-        </transition-group>
         </tbody>
       </table>
     
@@ -116,19 +132,22 @@
         <button type="button" class="btn btn-primary" v-on:click="save()"><i class="far fa-save"></i> Save</button>
         <button type="button" class="btn btn-primary">
           <label for="file-upload" class="custom-file-upload">
-              <i class="fas fa-upload"></i> Load
+            <i class="fas fa-upload"></i> Load
           </label>
           <input id="file-upload" type="file" @change="load">
         </button>
         <button type="button" class="btn btn-primary" v-on:click="exportToFile()"><i class="far fa-file-alt"></i> Export</button>
         <button type="button" class="btn btn-primary" v-on:click="verify()"><i class="fas fa-check"></i> Verify</button>
       </div>
-      <div v-if="alerts.length > 0" class="alerts">
+
+      <div v-if="alerts.length > 0" id="alerts" class="alerts">
           <hr>
           <div v-for="alert in alerts" :class="alert.type" class="alert" role="alert">
               {{ alert.id }}<span v-show="alert.type != 'alert-success'">:</span> {{ alert.description }}
           </div>
       </div>
+      
+      <span id="bottom"></span>
     </div> <!-- End of Vue app -->
   </div>
 
