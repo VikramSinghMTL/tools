@@ -9,8 +9,8 @@
   "dependencies": {
     "autoprefixer": "^9.4.6",
     "browser-sync": "^2.26.3",
-    "dragula": "^3.7.2",
-    "gulp": "^3.9.1",
+    "docx": "^4.7.0",
+    "gulp": "^4.0.0",
     "gulp-casperjs": "0.0.7",
     "gulp-changed": "^3.2.0",
     "gulp-concat": "^2.6.1",
@@ -20,7 +20,9 @@
     "gulp-sass": "^4.0.2",
     "gulp-uglify": "^3.0.1",
     "gulp-uglify-es": "^1.0.4",
+    "officegen": "^0.4.7",
     "pos": "^0.4.2",
+    "save-file": "^2.2.1",
     "vue-textarea-autosize": "^1.0.4"
   },
   "scripts": {

@@ -26,11 +26,11 @@ gulp.task('watch', function(){
     notify: false
   });
 
-  gulp.watch("./app/sass/*.scss", ['sass']);
+  gulp.watch("./app/sass/*.scss", gulp.series(['sass']));
   gulp.watch("./app/sass/*.scss").on('change', browserSync.reload);
   gulp.watch("./app/*.html").on('change', browserSync.reload);
   gulp.watch("./app/css/*.css").on('change', browserSync.reload);
   gulp.watch("./app/js/*.js").on('change', browserSync.reload);
 });
 
-gulp.task('default', ['sass', 'js', 'watch']);
+gulp.task('default', gulp.series(['sass', 'js', 'watch']));

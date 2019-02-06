@@ -30,19 +30,7 @@
     <p><input class="form-control" placeholder="Enter name of course" value="College Teaching and Course Design"></p>
     
     <div id="app">
-      <div class="buttons">
-        <button type="button" class="btn btn-primary" v-on:click="addGlo()"><i class="fas fa-plus"></i> GLO</button>
-        <button type="button" class="btn btn-primary" v-on:click="save()"><i class="far fa-save"></i> Save</button>
-        <button type="button" class="btn btn-primary">
-          <label for="file-upload" class="custom-file-upload">
-              <i class="fas fa-upload"></i> Load
-          </label>
-          <input id="file-upload" type="file" @change="load">
-        </button>
-        <button type="button" class="btn btn-primary"><i class="far fa-file-alt"></i> Export</button>
-        <button type="button" class="btn btn-primary"><i class="fas fa-check"></i> Verify</button>
-      </div>
-      <table class="table table-bordered">
+      <table id="table-of-objectives" class="table table-bordered">
         <thead>
           <tr>
             <th scope="col">General Learning Objective</th>
@@ -132,7 +120,7 @@
           </label>
           <input id="file-upload" type="file" @change="load">
         </button>
-        <button type="button" class="btn btn-primary"><i class="far fa-file-alt"></i> Export</button>
+        <button type="button" class="btn btn-primary" v-on:click="exportToFile()"><i class="far fa-file-alt"></i> Export</button>
         <button type="button" class="btn btn-primary" v-on:click="verify()"><i class="fas fa-check"></i> Verify</button>
       </div>
       <div v-if="alerts.length > 0" class="alerts">

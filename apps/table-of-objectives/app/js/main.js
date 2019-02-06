@@ -1,5 +1,7 @@
 var pos = require('pos');
 var blooms = require('./blooms.js');
+var docx = require('docx');
+var save = require('save-file');
 require('vue-textarea-autosize');
 
 new Vue
@@ -271,6 +273,52 @@ new Vue
     bloomsLevelToNumeric: function(level)
     {
       return Object.keys(this.blooms).indexOf(level.toLowerCase());
+    },
+    exportToFile: function()
+    {
+      var self = this;
+      var numberOfSlos = 0;
+
+      for (var i = 0; i < self.glos.length; i++)
+      {
+        numberOfSlos += self.glos[i].slos.length;
+      }
+      // Create document
+      var doc = new docx.Document(undefined, {
+        orientation: "landscape"
+      });
+
+      doc.Styles.createParagraphStyle("Normal", "Normal").font("Calibri");
+      doc.Styles.createParagraphStyle("hanging", "Hanging").indent({ left: 1080, hanging: 720 }).font("Calibri");
+      doc.Styles.createParagraphStyle("table-header", "TableHeader").bold().center().font("Calibri");
+
+      var table = doc.createTable(numberOfSlos + 1, 4);
+      table.getCell(0, 0).addContent(new docx.Paragraph("General Learning Objective").style("table-header"));
+      table.getCell(0, 1).addContent(new docx.Paragraph("Specific Learning Objective").style("table-header"));
+      table.getCell(0, 2).addContent(new docx.Paragraph("Knowledge Dimension").style("table-header"));
+      table.getCell(0, 3).addContent(new docx.Paragraph("Cognitive Process").style("table-header"));
+
+      var offset = 1;
+      for (var i = 0; i < self.glos.length; i++)
+      {
+        table.getCell(offset, 0).addContent(new docx.Paragraph(self.glos[i].id + "\t" + self.glos[i].description).style("hanging"));
+
+        for (var j = 0; j < self.glos[i].slos.length; j++)
+        {
+            table.getCell((j + offset), 1).addContent(new docx.Paragraph(self.glos[i].slos[j].id + "\t" + self.glos[i].slos[j].description).style("hanging"));
+            table.getCell((j + offset), 2).addContent(new docx.Paragraph(self.glos[i].slos[j].knowledge.charAt(0).toUpperCase() + self.glos[i].slos[j].knowledge.slice(1)).center());
+            table.getCell((j + offset), 3).addContent(new docx.Paragraph(self.glos[i].slos[j].cognitive.charAt(0).toUpperCase() + self.glos[i].slos[j].cognitive.slice(1)).center());
+        }
+
+        offset += self.glos[i].slos.length;
+      }
+
+      // Used to export the file into a .docx file
+      var packer = new docx.Packer(doc);
+
+      packer.toBlob(doc).then(blob => {
+          save(blob, "example.docx");
+      });
     }
   }
 })
