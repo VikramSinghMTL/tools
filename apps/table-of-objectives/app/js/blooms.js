@@ -42,7 +42,6 @@ module.exports = {
         "Translate"
     ],
     "Apply": [
-        "Apply",
         "Build",
         "Choose",
         "Construct",
@@ -57,7 +56,7 @@ module.exports = {
         "Solve",
         "Utilize"
     ],
-    "Analyze": [
+    "Evaluate": [
         "Agree",
         "Appraise",
         "Assess",
@@ -73,7 +72,6 @@ module.exports = {
         "Determine",
         "Disprove",
         "Estimate",
-        "Evaluate",
         "Explain",
         "Importance",
         "Influence",
@@ -93,8 +91,7 @@ module.exports = {
         "Support",
         "Value"
     ],
-    "Evaluate": [
-        "Analyze",
+    "Analyze": [
         "Assume",
         "Categorize",
         "Classify",
@@ -126,7 +123,6 @@ module.exports = {
         "Compile",
         "Compose",
         "Construct",
-        "Create",
         "Delete",
         "Design",
         "Develop",

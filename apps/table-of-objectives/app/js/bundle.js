@@ -43,7 +43,6 @@ module.exports = {
         "Translate"
     ],
     "Apply": [
-        "Apply",
         "Build",
         "Choose",
         "Construct",
@@ -58,7 +57,7 @@ module.exports = {
         "Solve",
         "Utilize"
     ],
-    "Analyze": [
+    "Evaluate": [
         "Agree",
         "Appraise",
         "Assess",
@@ -74,7 +73,6 @@ module.exports = {
         "Determine",
         "Disprove",
         "Estimate",
-        "Evaluate",
         "Explain",
         "Importance",
         "Influence",
@@ -94,8 +92,7 @@ module.exports = {
         "Support",
         "Value"
     ],
-    "Evaluate": [
-        "Analyze",
+    "Analyze": [
         "Assume",
         "Categorize",
         "Classify",
@@ -127,7 +124,6 @@ module.exports = {
         "Compile",
         "Compose",
         "Construct",
-        "Create",
         "Delete",
         "Design",
         "Develop",
@@ -162,27 +158,27 @@ let docx = require('docx');
 let save = require('save-file');
 require('vue-textarea-autosize');
 
-new Vue
+let app = new Vue
 ({
   el: '#app',
   data:
   {
     title: "",
     description: "",
-    glos: {},
+    glos: [],
     alerts: [],
     blooms: {}
   },
   mounted: function()
   {
-    let self = this;
-    this.loadJSON(function (response)
-    {
-      let json = JSON.parse(response);
-      self.title = json.title;
-      self.description = json.description;
-      self.glos = json.glos;
-    });
+    // let self = this;
+    // this.loadJSON(function (response)
+    // {
+    //   let json = JSON.parse(response);
+    //   self.title = json.title;
+    //   self.description = json.description;
+    //   self.glos = json.glos;
+    // });
     this.convertBloomsToLowerCase();
   },
   methods:
@@ -239,6 +235,12 @@ new Vue
     },
     removeSlo: function(gloId, sloId)
     {
+      if (this.glos.length == 1 && this.glos[gloId].slos.length == 1)
+      {
+        this.glos = [];
+        return;
+      }
+
       if (this.glos[gloId].slos.length == 1)
       {
         this.glos.splice(gloId, 1);
@@ -276,7 +278,7 @@ new Vue
     {
       if (this.glos.length == 1)
       {
-        this.glos = {};
+        this.glos = [];
         return;
       }
 
@@ -334,7 +336,7 @@ new Vue
       let file = new Blob([data], {type: 'text/plain'});
       
       a.href = URL.createObjectURL(file);
-      a.download = 'table_of_objectives.json';
+      a.download = 'table_of_objectives_data.json';
       a.click();
     },
     load: function(event)
@@ -377,9 +379,10 @@ new Vue
           let taggedWords = tagger.tag(words);
           let sentences = glo.description.match(/\w[.?!](\s|$)/g);
 
-          if (verbTags.indexOf(taggedWords[0][1]) == -1)
+          if (verbTags.indexOf(taggedWords[0][1]) == -1 && this.bloomsVerbLookup(taggedWords[0][0]) == [])
           {
-            this.addAlert(glo.id, "warning", "Objectives should start with a verb. Your objective may be too wordy.");
+            this.addAlert(glo.id, "warning", "Objectives should start with a verb: " + taggedWords[0][0]);
+            continue;
           }
           else
           {
@@ -420,14 +423,15 @@ new Vue
 
           if (verbTags.indexOf(taggedWords[0][1]) == -1)
           {
-            this.addAlert(slo.id, "warning", "Objectives should start with a verb. Your objective may be too wordy.");
+            this.addAlert(slo.id, "warning", "Objectives should start with a verb: " + taggedWords[0][0]);
+            continue;
           }
           else
           {
             sloVerb = taggedWords[0][0];
           }
 
-          if (sloVerb && bloomsLevels.indexOf(sloVerb.toLowerCase()) != -1)
+          if (bloomsLevels.indexOf(sloVerb.toLowerCase()) != -1)
           {
             this.addAlert(slo.id, "warning", "\"" + sloVerb + "\" is too general for a SLO. How will one show that one can " + bloomsLevels[bloomsLevels.indexOf(sloVerb.toLowerCase())] + "?");
           }
@@ -437,14 +441,25 @@ new Vue
             this.addAlert(slo.id, "warning", "Objectives should be one sentence max.")
           }
 
-          if (gloVerb && this.bloomsLevelToNumeric(slo.cognitive) > this.bloomsLevelToNumeric(this.bloomsVerbLookup(gloVerb)))
+          let gloLevels = this.bloomsLevelToNumeric(this.bloomsVerbLookup(gloVerb));
+          let sloLevels = this.bloomsLevelToNumeric(this.bloomsVerbLookup(sloVerb));
+
+          for (let i = 0; i < gloLevels.length; i++)
           {
-            this.addAlert(slo.id, "warning", "The Cognitive Process (" + slo.cognitive + ") should not be higher than the GLO (" + gloVerb + ")");
+            if (this.bloomsLevelToNumeric([slo.cognitive]) > gloLevels[i])
+            {
+              this.addAlert(slo.id, "warning", "The Cognitive Process (" + slo.cognitive + ") should *generally* not be higher than the GLO (" + gloVerb + "). Sometimes this calls for a new GLO to reorganize your higher order SLOs. This is very context sensitive so you have to make the final call.");
+              break;
+            }
           }
 
-          if (sloVerb && this.bloomsLevelToNumeric(slo.cognitive) != this.bloomsLevelToNumeric(this.bloomsVerbLookup(sloVerb)))
+          for (let i = 0; i < sloLevels.length; i++)
           {
-            this.addAlert(slo.id, "warning", "The SLO's action verb (" + sloVerb + ") should match the Cognitive Process (" + slo.cognitive + ")");
+            if (this.bloomsLevelToNumeric([slo.cognitive]) > sloLevels[i])
+            {
+              this.addAlert(slo.id, "warning", "The SLO's action verb (" + sloVerb + ") should match the Cognitive Process (" + slo.cognitive + ")");
+              break;
+            }
           }
         }
       }
@@ -468,25 +483,38 @@ new Vue
     bloomsVerbLookup: function(verb)
     {
       let self = this;
+      let verbs = [];
 
       if (Object.keys(self.blooms).indexOf(verb.toLowerCase()) != -1)
       {
-        return verb;
+        verbs.push(verb);
+        return verbs;
       }
 
       for (let i = 0; i < Object.values(self.blooms).length; i++)
       {
         if (Object.values(self.blooms)[i].indexOf(verb.toLowerCase()) != -1)
         {
-          return Object.keys(self.blooms)[i];
+          verbs.push(Object.keys(self.blooms)[i]);
         }
       }
 
-      return "not found";
+      return verbs;
     },
-    bloomsLevelToNumeric: function(level)
+    bloomsLevelToNumeric: function(levels)
     {
-      return Object.keys(this.blooms).indexOf(level.toLowerCase());
+      let self = this;
+      let numerics = [];
+
+      for (let i = 0; i < levels.length; i++)
+      {
+        if (Object.keys(self.blooms).indexOf(levels[i].toLowerCase()) != -1)
+        {
+          numerics.push(Object.keys(self.blooms).indexOf(levels[i].toLowerCase()));
+        }
+      }
+
+      return numerics;
     },
     exportToFile: function()
     {
@@ -533,15 +561,18 @@ new Vue
 
       // Used to export the file into a .docx file
       let packer = new docx.Packer(doc);
+      let filename = "Table of Objectives - " + this.title + ".docx";
 
       packer.toBlob(doc).then(blob => {
-          save(blob, "example.docx");
+          save(blob, filename);
       });
+    },
+    showVerbs: function()
+    {
+      window.open('verbs.html','_blank');
     }
   }
 })
-
-
 },{"./blooms.js":1,"docx":4,"pos":12,"save-file":16,"vue-textarea-autosize":21}],3:[function(require,module,exports){
 module.exports = function _atob(str) {
   return atob(str)
