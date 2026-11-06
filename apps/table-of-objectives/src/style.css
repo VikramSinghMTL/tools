@@ -1,0 +1,240 @@
+@import "tailwindcss" source(none);
+@source "../index.html";
+@source "./";
+/* The verb list is data, not markup: scanning it would generate classes for words like "join". */
+@source not "./verbs-en.js";
+
+@plugin "daisyui" {
+  themes: false;
+}
+
+@plugin "daisyui/theme" {
+  name: "paper";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+  --color-base-100: #ffffff;
+  --color-base-200: #f3f1ec;
+  --color-base-300: #e2ded5;
+  --color-base-content: #1d1f21;
+  --color-primary: #1f4a68;
+  --color-primary-content: #ffffff;
+  --color-neutral: #1d1f21;
+  --color-neutral-content: #ffffff;
+  --color-error: #b42318;
+  --color-error-content: #ffffff;
+  --color-warning: #c2770e;
+  --color-warning-content: #ffffff;
+  --color-success: #2f7a4f;
+  --color-success-content: #ffffff;
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.375rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "paper-dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+  --color-base-100: #1f2023;
+  --color-base-200: #151618;
+  --color-base-300: #34363a;
+  --color-base-content: #e7e4de;
+  --color-primary: #9cc0dc;
+  --color-primary-content: #10202c;
+  --color-neutral: #e7e4de;
+  --color-neutral-content: #151618;
+  --color-error: #f0857a;
+  --color-error-content: #2a0d0a;
+  --color-warning: #e5a54b;
+  --color-warning-content: #2a1a05;
+  --color-success: #7cc49a;
+  --color-success-content: #0b2416;
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.375rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: "Source Serif 4", Charter, Georgia, serif;
+}
+
+@layer components {
+  /* Text that reads as part of the document until you edit it. */
+  .doc-field {
+    display: block;
+    margin-inline: -0.25rem;
+    width: calc(100% + 0.5rem);
+    padding: 0.125rem 0.25rem;
+    border: 0;
+    border-radius: 0.1875rem;
+    background: transparent;
+    line-height: 1.5;
+    color: inherit;
+    font: inherit;
+    resize: none;
+  }
+  .doc-field:hover {
+    background: color-mix(in oklab, var(--color-base-content) 4%, transparent);
+  }
+  .doc-field:focus {
+    outline: 2px solid color-mix(in oklab, var(--color-primary) 55%, transparent);
+    outline-offset: 0;
+    background: var(--color-base-100);
+  }
+  .doc-field::placeholder {
+    color: color-mix(in oklab, var(--color-base-content) 38%, transparent);
+  }
+  select.doc-field {
+    appearance: none;
+    cursor: pointer;
+    text-align: center;
+    text-align-last: center;
+  }
+
+  /* The table mirrors the exported Word table: four ruled columns, actions in the margin. */
+  .toa {
+    --rule: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+    width: 100%;
+    min-width: 56rem;
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+  }
+  .toa .cell {
+    border: 1px solid var(--rule);
+    padding: 0.5rem 0.625rem;
+    vertical-align: top;
+  }
+  .toa thead .cell {
+    font-weight: 600;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .toa .cell {
+    transition: background-color 120ms ease;
+  }
+  .toa .cell.hl {
+    background: color-mix(in oklab, var(--color-primary) 8%, transparent);
+  }
+  .toa .cell.hl-danger {
+    background: color-mix(in oklab, var(--color-error) 9%, transparent);
+  }
+  .toa .margin {
+    width: 1px;
+    padding: 0.375rem 0 0 0.5rem;
+    vertical-align: top;
+    white-space: nowrap;
+  }
+
+  /* Marks a cell that has Verify notes; hover it to read them. */
+  .note-dot {
+    position: absolute;
+    /* Inside the cell's padding, so it never covers text. */
+    top: 0.3125rem;
+    right: 0.1875rem;
+    width: 0.4375rem;
+    height: 0.4375rem;
+    border-radius: 9999px;
+    cursor: help;
+  }
+
+  /* Toolbar buttons: one shape and size; only the emphasis varies. */
+  .tb-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    height: 2rem;
+    padding-inline: 0.625rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+  }
+  .tb-btn:hover {
+    background: color-mix(in oklab, var(--color-base-content) 7%, transparent);
+  }
+  .tb-btn:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-primary) 60%, transparent);
+    outline-offset: 1px;
+  }
+  .tb-btn svg {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    opacity: 0.75;
+  }
+  /* On/off buttons (Verify): tinted when on. */
+  .tb-btn[aria-pressed='true'] {
+    color: var(--color-primary);
+    background: color-mix(in oklab, var(--color-primary) 10%, transparent);
+    border-color: color-mix(in oklab, var(--color-primary) 30%, transparent);
+  }
+  .tb-btn[aria-pressed='true']:hover {
+    background: color-mix(in oklab, var(--color-primary) 16%, transparent);
+  }
+  .tb-btn[aria-pressed='true'] svg {
+    opacity: 1;
+  }
+  /* The main action. */
+  .tb-primary {
+    color: var(--color-primary-content);
+    background: var(--color-primary);
+  }
+  .tb-primary:hover {
+    background: color-mix(in oklab, var(--color-primary) 88%, var(--color-base-content));
+  }
+  .tb-primary svg {
+    opacity: 1;
+  }
+  .tb-icon {
+    width: 2rem;
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  .tool {
+    display: inline-grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.1875rem;
+    color: color-mix(in oklab, var(--color-base-content) 45%, transparent);
+    cursor: pointer;
+  }
+  .tool:hover {
+    color: var(--color-base-content);
+    background: color-mix(in oklab, var(--color-base-content) 7%, transparent);
+  }
+  .tool.danger:hover {
+    color: var(--color-error);
+  }
+  .tool:disabled {
+    visibility: hidden;
+  }
+
+  .add-link {
+    font-size: 0.875rem;
+    color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+    cursor: pointer;
+  }
+  .add-link:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
