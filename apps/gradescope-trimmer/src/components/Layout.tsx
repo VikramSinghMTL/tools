@@ -43,7 +43,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 								•
 							</span>
 							<a
-								href="https://github.com/VikramSinghMTL/gradescope-trimmer"
+								href="https://github.com/VikramSinghMTL/tools"
 								target="_blank"
 								rel="noopener noreferrer"
 								className="text-latte-blue dark:text-mocha-blue hover:text-latte-sapphire dark:hover:text-mocha-sapphire transition-colors"

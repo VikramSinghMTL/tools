@@ -21,7 +21,7 @@ A web application that simplifies processing Gradescope submission exports by au
 
 2. **Process submissions:**
 
-    - Open the [Gradescope PDF Trimmer](https://vikramsinghmtl.github.io/gradescope-trimmer/)
+    - Open the [Gradescope PDF Trimmer](https://tools.singh.gg/gradescope-trimmer/)
     - Upload the exported ZIP file
     - Review the metadata table showing all submissions
     - Set how many pages to keep (default: 1)
@@ -44,7 +44,7 @@ This tool automates all three steps, saving significant time when processing lar
 ## Resources
 
 -   If you encounter any issues, feel free to [email me](mailto:vikram.singh@johnabbott.qc.ca)
--   View the project on [GitHub](https://github.com/VikramSinghMTL/gradescope-trimmer)
+-   View the project on [GitHub](https://github.com/VikramSinghMTL/tools)
 
 ## License
 
