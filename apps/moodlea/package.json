@@ -1,0 +1,8 @@
+{
+  "name": "moodlea",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build": "rm -rf dist && mkdir -p dist && cp index.html bookmarklet.js dist/"
+  }
+}
