@@ -10,6 +10,7 @@ import {
 	FileDown,
 	FilePlus,
 	FileText,
+	GraduationCap,
 	Info,
 	ListChecks,
 	Moon,
@@ -18,6 +19,7 @@ import {
 	Trash2,
 	Upload,
 } from "@lucide/vue";
+import sampleData from "../sample-data.json?raw";
 import { autosize } from "./autosize.js";
 import { STEM } from "./export-shared.js";
 import {
@@ -90,6 +92,7 @@ export default {
 		FileDown,
 		FilePlus,
 		FileText,
+		GraduationCap,
 		Info,
 		ListChecks,
 		Moon,
@@ -490,6 +493,12 @@ export default {
 			}
 			this.openTable(createTable());
 		},
+		// Opens the bundled example as a new table, so it never overwrites the user's work.
+		loadSample() {
+			const table = createTable(parseBackup(sampleData));
+			this.openTable(table);
+			this.persist(table);
+		},
 		duplicateTable() {
 			// A JSON round trip deep-copies the reactive table (structuredClone rejects Vue proxies).
 			const copy = createTable({
@@ -666,6 +675,7 @@ function downloadBlob(blob, filename) {
           <ul class="border-t border-base-300 py-1">
             <li><button type="button" class="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-base-200" @click="newTable()"><FilePlus class="size-3.5 shrink-0 opacity-70" /> New table</button></li>
             <li><button type="button" class="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-base-200" @click="duplicateTable()"><Copy class="size-3.5 shrink-0 opacity-70" /> Duplicate</button></li>
+            <li><button type="button" class="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-base-200" @click="loadSample()"><GraduationCap class="size-3.5 shrink-0 opacity-70" /> Load example table</button></li>
             <li><button type="button" class="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-base-200 text-error" @click="closeMenu(); deleteCurrentTable()"><Trash2 class="size-3.5 shrink-0" /> Delete…</button></li>
           </ul>
           <ul class="border-t border-base-300 py-1">
