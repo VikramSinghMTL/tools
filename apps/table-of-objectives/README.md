@@ -1,6 +1,6 @@
 # Table of Objectives Builder
 
-Build a table of general and specific learning objectives, check them against Bloom's taxonomy, and export the result to Word.
+Build a table of general and specific learning objectives, check them against Bloom's taxonomy, and export the result to Word or PDF (from the table menu).
 
 Requires Node 20.19+.
 

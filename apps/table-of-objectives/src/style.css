@@ -72,6 +72,13 @@
 	--font-serif: "Source Serif 4 Variable", Charter, Georgia, serif;
 }
 
+/* Always reserve the scrollbar's space, so the page doesn't shift sideways when it appears
+   (e.g. when Verify adds its notes). No effect with overlay scrollbars. Unlayered on purpose:
+   DaisyUI sets scrollbar-gutter on :root (only while a dialog is open), and this must win. */
+:root {
+	scrollbar-gutter: stable;
+}
+
 @layer components {
 	/* Text that reads as part of the document until you edit it. */
 	.doc-field {
@@ -134,11 +141,29 @@
 	.toa .cell.hl-danger {
 		background: color-mix(in oklab, var(--color-error) 9%, transparent);
 	}
+	/* The buttons in the table's right margin, centred on their row (or GLO group). */
 	.toa .margin {
 		width: 1px;
-		padding: 0.375rem 0 0 0.5rem;
-		vertical-align: top;
+		padding: 0 0 0 0.5rem;
+		vertical-align: middle;
 		white-space: nowrap;
+	}
+
+	/* The page's text ends where the table's rules end, as in the exports. The table is wider
+	   than its rules by the button columns (--tools), less how far it reaches into the page's
+	   right padding (--overhang, matching the table wrapper's -mr/pr classes). */
+	.doc-body {
+		/* SLO buttons: 3 × 1.5rem + 0.5rem padding. GLO buttons: 1.5rem + 0.5rem + 1px rule. */
+		--tools: calc(7rem + 1px);
+		--overhang: 0rem;
+	}
+	@media (width >= 64rem) {
+		.doc-body {
+			--overhang: 3rem;
+		}
+	}
+	.doc-text {
+		margin-right: calc(var(--tools) - var(--overhang));
 	}
 
 	/* Marks a cell that has Verify notes; hover it to read them. */
@@ -197,20 +222,11 @@
 	.tb-btn[aria-pressed="true"] svg {
 		opacity: 1;
 	}
-	/* The main action. */
-	.tb-primary {
-		color: var(--color-primary-content);
-		background: var(--color-primary);
-	}
-	.tb-primary:hover {
-		background: color-mix(
-			in oklab,
-			var(--color-primary) 88%,
-			var(--color-base-content)
-		);
-	}
-	.tb-primary svg {
-		opacity: 1;
+	/* A tooltip below its button but aligned to the button's right edge, so tooltips on the
+	   rightmost buttons don't run off narrow screens. The arrow stays centred on the button. */
+	.tooltip-bottom.tooltip-end[data-tip]::before {
+		inset: var(--tt-off) 0 auto auto;
+		transform: translateY(var(--tt-pos, -0.25rem));
 	}
 	.tb-icon {
 		width: 2rem;

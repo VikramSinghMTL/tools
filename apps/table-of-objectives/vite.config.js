@@ -21,4 +21,11 @@ export default defineConfig({
 		}),
 	],
 	server: { port: 8080 },
+	build: {
+		rollupOptions: {
+			// jsPDF loads these on demand only for features this app doesn't use (HTML and SVG
+			// rendering). Leaving them out keeps them from being bundled and cached for offline use.
+			external: ["html2canvas", "canvg", "dompurify"],
+		},
+	},
 });

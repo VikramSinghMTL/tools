@@ -58,7 +58,7 @@ defineExpose({ open });
       <div class="flex flex-wrap items-end gap-x-6 gap-y-3 border-b border-base-300 px-6 pt-6 pb-4">
         <div class="flex-1">
           <h2 class="font-serif text-2xl font-semibold tracking-tight">Example verbs</h2>
-          <p class="mt-1 text-sm text-base-content/60">Ideas for each level of Bloom's taxonomy, from lower-order (1) to higher-order (6) thinking. Any verb works. Click one to copy it.</p>
+          <p class="mt-1 text-sm text-base-content/60">Ideas for each level of <a href="https://en.wikipedia.org/wiki/Bloom's_taxonomy" target="_blank" rel="noopener noreferrer" class="underline decoration-base-content/30 underline-offset-2 hover:text-primary hover:decoration-current">Bloom's taxonomy</a>, from lower-order (1) to higher-order (6) thinking. Any verb works. Click one to copy it.</p>
         </div>
         <div class="flex w-full items-center gap-2 border-b border-base-content/30 py-1 text-sm focus-within:border-primary sm:w-56">
           <Search class="size-3.5 opacity-50" />

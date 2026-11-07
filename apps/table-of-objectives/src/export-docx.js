@@ -14,28 +14,30 @@ import {
 	TableRow,
 	TabStopType,
 	TextRun,
+	VerticalAlign,
 	WidthType,
 } from "docx";
+import {
+	COLUMN_SHARES,
+	capitalize,
+	HEADERS,
+	INK,
+	RULE,
+	STEM,
+	TEXT,
+} from "./export-shared.js";
 
 /** @typedef {import('./table-ops.js').Glo} Glo */
 
 const HEADING_FONT = "Georgia";
 const BODY_FONT = "Calibri";
-const INK = "1F4A68"; // The app's primary colour.
-const RULE = "7A7A7A"; // The app's table rules.
 const HANGING = 600; // Where numbered text starts, in twips.
 
 // Landscape A4 is 16838 twips wide; minus 1-inch (1440) margins on each side.
 const TABLE_WIDTH = 16838 - 2 * 1440;
-// General, specific, knowledge, cognitive: the same proportions as the table on screen.
-const COLUMN_WIDTHS = [0.28, 0.46, 0.13, 0.13].map((share) =>
+const COLUMN_WIDTHS = COLUMN_SHARES.map((share) =>
 	Math.round(share * TABLE_WIDTH),
 );
-
-export const STEM = "By the end of this course, students will be able to:";
-
-/** @param {string} s */
-const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /**
  * "1.2<tab>Description", with a hanging indent so wrapped lines line up under the text.
@@ -56,7 +58,7 @@ const centered = (text) =>
 
 /**
  * @param {Paragraph} paragraph
- * @param {{ rowSpan?: number }} [options]
+ * @param {Omit<import("docx").ITableCellOptions, "children">} [options]
  */
 const cell = (paragraph, options = {}) =>
 	new TableCell({
@@ -76,12 +78,9 @@ const rule = { style: BorderStyle.SINGLE, size: 6, color: RULE };
 export function exportToDocx(title, description, glos) {
 	const header = new TableRow({
 		tableHeader: true,
-		children: [
-			"General Learning Objective",
-			"Specific Learning Objective",
-			"Knowledge Dimension",
-			"Cognitive Process",
-		].map((text) => cell(new Paragraph({ style: "TableHeader", text }))),
+		children: HEADERS.map((text) =>
+			cell(new Paragraph({ style: "TableHeader", text })),
+		),
 	});
 
 	const rows = glos.flatMap((glo) =>
@@ -98,8 +97,12 @@ export function exportToDocx(title, description, glos) {
 								]
 							: []),
 						cell(numbered(slo.id, slo.description)),
-						cell(centered(capitalize(slo.knowledge))),
-						cell(centered(capitalize(slo.cognitive))),
+						cell(centered(capitalize(slo.knowledge)), {
+							verticalAlign: VerticalAlign.CENTER,
+						}),
+						cell(centered(capitalize(slo.cognitive)), {
+							verticalAlign: VerticalAlign.CENTER,
+						}),
 					],
 				}),
 		),
@@ -110,7 +113,7 @@ export function exportToDocx(title, description, glos) {
 			default: {
 				document: { run: { font: BODY_FONT, size: 22 } },
 				title: {
-					run: { font: HEADING_FONT, size: 48, bold: true, color: "1D1F21" },
+					run: { font: HEADING_FONT, size: 48, bold: true, color: TEXT },
 					paragraph: {
 						alignment: AlignmentType.CENTER,
 						spacing: { after: 360 },

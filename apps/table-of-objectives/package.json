@@ -21,6 +21,8 @@
 		"@fontsource-variable/source-serif-4": "^5.3.1",
 		"@lucide/vue": "^1.70.0",
 		"docx": "^9.15.2",
+		"jspdf": "^4.2.1",
+		"jspdf-autotable": "^5.0.9",
 		"vue": "^3.5.45"
 	},
 	"devDependencies": {

@@ -9,6 +9,7 @@ import {
 	Download,
 	FileDown,
 	FilePlus,
+	FileText,
 	Info,
 	ListChecks,
 	Moon,
@@ -18,6 +19,7 @@ import {
 	Upload,
 } from "@lucide/vue";
 import { autosize } from "./autosize.js";
+import { STEM } from "./export-shared.js";
 import {
 	createTable,
 	deleteTable,
@@ -47,6 +49,11 @@ const SEVERITY_DOT = {
 	error: "bg-error",
 	warning: "bg-warning",
 	hint: "bg-base-content/35",
+};
+const SEVERITY_BADGE = {
+	error: "bg-error",
+	warning: "bg-warning",
+	hint: "bg-base-content/50",
 };
 const SEVERITY_RANK = { error: 0, warning: 1, hint: 2 };
 
@@ -82,6 +89,7 @@ export default {
 		Download,
 		FileDown,
 		FilePlus,
+		FileText,
 		Info,
 		ListChecks,
 		Moon,
@@ -109,6 +117,7 @@ export default {
 			hover: { glo: null, slo: null, danger: false },
 			undo: null, // The last deletion, while it can still be undone: { tableId, before, after, message }
 			menuOpen: false, // The table menu.
+			stem: STEM,
 		};
 	},
 	computed: {
@@ -193,6 +202,20 @@ export default {
 				],
 				["hint", counts.hint, counts.hint === 1 ? "hint" : "hints"],
 			].filter(([, n]) => n > 0);
+		},
+		verifyTooltip() {
+			if (!this.verifyMode) return "Verify: check objectives as you edit";
+			const summary = this.verifySummary.map(([, n, word]) => `${n} ${word}`).join(", ");
+			return `Verify is on (${summary || "no issues"}). Click to turn off.`;
+		},
+		// The toolbar badge: how many notes there are, coloured by the most serious one.
+		verifyBadge() {
+			const counts = this.verifyMode && this.verification?.counts;
+			if (!counts) return null;
+			const count = counts.error + counts.warning + counts.hint;
+			if (!count) return null;
+			const worst = counts.error ? "error" : counts.warning ? "warning" : "hint";
+			return { count, class: SEVERITY_BADGE[worst] };
 		},
 		gridMax() {
 			return Math.max(1, ...(this.verification?.grid.flat() ?? []));
@@ -495,7 +518,7 @@ export default {
 			});
 			downloadBlob(
 				file,
-				`${this.tableName(this.table).replace(/[\\/:*?"<>|]/g, "-")}.json`,
+				`${safeFileName(this.tableName(this.table))}.json`,
 			);
 			this.closeMenu();
 		},
@@ -569,21 +592,33 @@ export default {
 			this.glos = JSON.parse(undo.before);
 			this.undo = null;
 		},
-		async exportToFile() {
+		/** @param {string} extension */
+		exportFileName(extension) {
+			return `Table of Objectives - ${safeFileName(this.tableName(this.table))}.${extension}`;
+		},
+		async exportToWord() {
+			this.closeMenu();
 			const { exportToDocx } = await import("./export-docx.js");
-			const blob = await exportToDocx(this.title, this.description, this.glos);
-			downloadBlob(
-				blob,
-				"Table of Objectives - " +
-					this.tableName(this.table).replace(/[\\/:*?"<>|]/g, "-") +
-					".docx",
-			);
+			downloadBlob(await exportToDocx(this.title, this.description, this.glos), this.exportFileName("docx"));
+		},
+		async exportToPdf() {
+			this.closeMenu();
+			const { exportToPdf } = await import("./export-pdf.js");
+			downloadBlob(exportToPdf(this.title, this.description, this.glos), this.exportFileName("pdf"));
 		},
 		showVerbs() {
 			this.$refs.verbs.open();
 		},
 	},
 };
+
+/**
+ * A table name made safe to use as a file name.
+ * @param {string} name
+ */
+function safeFileName(name) {
+	return name.replace(/[\\/:*?"<>|]/g, "-");
+}
 
 function downloadBlob(blob, filename) {
 	const a = document.createElement("a");
@@ -597,6 +632,9 @@ function downloadBlob(blob, filename) {
 <template>
   <header class="border-b border-base-300">
     <div class="mx-auto flex max-w-[84rem] items-center gap-3 px-4 py-2.5 sm:px-6">
+      <!-- Lined up on the text baseline: centring each box leaves the serif title and the sans
+           table name at slightly different heights. -->
+      <div class="flex min-w-0 items-baseline gap-3">
       <span class="hidden font-serif text-[1.0625rem] font-semibold tracking-tight whitespace-nowrap sm:inline">Table of Objectives</span>
       <span class="hidden text-base-content/25 sm:inline">/</span>
 
@@ -631,6 +669,10 @@ function downloadBlob(blob, filename) {
             <li><button type="button" class="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-base-200 text-error" @click="closeMenu(); deleteCurrentTable()"><Trash2 class="size-3.5 shrink-0" /> Delete…</button></li>
           </ul>
           <ul class="border-t border-base-300 py-1">
+            <li><button type="button" class="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-base-200" @click="exportToWord()"><FileText class="size-3.5 shrink-0 opacity-70" /> Export to Word</button></li>
+            <li><button type="button" class="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-base-200" @click="exportToPdf()"><FileDown class="size-3.5 shrink-0 opacity-70" /> Export to PDF</button></li>
+          </ul>
+          <ul class="border-t border-base-300 py-1">
             <li class="px-3 pt-1.5 pb-0.5 pl-8.5 text-xs text-base-content/55">
               Only needed to move a table to another browser or device. Everything here saves automatically.
             </li>
@@ -643,43 +685,48 @@ function downloadBlob(blob, filename) {
           </p>
         </div>
       </div>
+      </div>
       <input ref="importInput" type="file" class="hidden" accept=".json,application/json" @change="importBackup">
 
       <nav class="ml-auto flex shrink-0 items-center gap-1">
-        <button type="button" class="tb-btn" title="Example verbs" @click="showVerbs()">
-          <BookOpen /><span class="hidden sm:inline">Example verbs</span>
-        </button>
-        <button
-          type="button"
-          class="tb-btn"
-          :aria-pressed="verifyMode"
-          :title="verifyMode ? 'Verify is on: objectives are checked as you edit' : 'Check objectives as you edit'"
-          @click="verifyMode = !verifyMode; toggleVerify()"
-        >
-          <ListChecks />
-          <span>Verify</span>
-          <span v-if="verifyMode && verification" class="hidden items-center gap-1.5 text-xs font-normal tabular-nums md:flex">
-            <template v-if="verifySummary.length">
-              <span v-for="[severity, count] in verifySummary" :key="severity" class="flex items-center gap-1">
-                <span class="size-1.5 rounded-full" :class="dotClass(severity)"></span>{{ count }}
-              </span>
-            </template>
-            <span v-else>✓</span>
-          </span>
-        </button>
-        <button type="button" class="tb-btn tb-primary" title="Export to Word" @click="exportToFile()">
-          <FileDown /><span class="hidden sm:inline">Export to Word</span>
-        </button>
-        <button
-          type="button"
-          class="tb-btn tb-icon"
-          :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-          :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-          @click="toggleTheme()"
-        >
-          <Sun v-if="isDark" />
-          <Moon v-else />
-        </button>
+        <span class="tooltip tooltip-bottom flex" data-tip="Example verbs">
+          <button
+            type="button"
+            class="tb-btn tb-icon"
+            aria-label="Example verbs"
+            @click="showVerbs()"
+          >
+            <BookOpen />
+          </button>
+        </span>
+        <span class="tooltip tooltip-bottom tooltip-end flex" :data-tip="verifyTooltip">
+          <button
+            type="button"
+            class="tb-btn tb-icon relative"
+            :aria-label="verifyTooltip"
+            :aria-pressed="verifyMode"
+            @click="verifyMode = !verifyMode; toggleVerify()"
+          >
+            <ListChecks />
+            <span
+              v-if="verifyBadge"
+              class="absolute -top-1 -right-1 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[0.625rem] leading-none font-semibold text-white"
+              :class="verifyBadge.class"
+              aria-hidden="true"
+            >{{ verifyBadge.count }}</span>
+          </button>
+        </span>
+        <span class="tooltip tooltip-bottom tooltip-end flex" :data-tip="isDark ? 'Switch to light mode' : 'Switch to dark mode'">
+          <button
+            type="button"
+            class="tb-btn tb-icon"
+            :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+            @click="toggleTheme()"
+          >
+            <Sun v-if="isDark" />
+            <Moon v-else />
+          </button>
+        </span>
       </nav>
     </div>
   </header>
@@ -688,7 +735,7 @@ function downloadBlob(blob, filename) {
     <p v-if="storageError" role="alert" class="mx-auto mb-4 max-w-[84rem] text-sm text-error">{{ storageError }}</p>
     <p v-if="importError" role="alert" class="mx-auto mb-4 max-w-[84rem] text-sm text-error">{{ importError }}</p>
 
-    <article class="mx-auto max-w-[84rem] border border-base-300 bg-base-100 px-5 py-10 shadow-sm shadow-black/[0.03] sm:px-12 sm:py-14 lg:px-16">
+    <article class="doc-body mx-auto max-w-[84rem] border border-base-300 bg-base-100 px-5 py-10 shadow-sm shadow-black/[0.03] sm:px-12 sm:py-14 lg:px-16">
       <textarea
         v-autosize
         v-model="title"
@@ -698,16 +745,23 @@ function downloadBlob(blob, filename) {
         @keydown.enter.prevent
       ></textarea>
 
+      <!-- Ends where the table's ruled area ends; the table's right margin holds its buttons. -->
+      <div class="doc-text">
       <h2 class="mt-10 mb-1 font-serif text-lg font-semibold text-primary">Course Description</h2>
       <textarea
         v-autosize
         v-model="description"
-        class="doc-field max-w-[75ch]"
+        class="doc-field"
         placeholder="What the course covers, who it's for, and what students will do."
         aria-label="Course description"
       ></textarea>
 
-      <div class="relative mt-10 -mr-5 overflow-x-auto pr-5 sm:-mr-12 sm:pr-12 lg:-mr-16 lg:pr-4">
+      <!-- As in the Word and PDF exports. -->
+      <h2 class="mt-10 mb-1 font-serif text-lg font-semibold text-primary">Learning Objectives</h2>
+      <p>{{ stem }}</p>
+      </div>
+
+      <div class="relative mt-4 -mr-5 overflow-x-auto pr-5 sm:-mr-12 sm:pr-12 lg:-mr-16 lg:pr-4">
         <table id="table-of-objectives" class="toa">
           <thead>
             <tr>
@@ -751,7 +805,7 @@ function downloadBlob(blob, filename) {
                     ></textarea>
                   </div>
                 </td>
-                <td class="cell relative" :class="highlight(gloIndex, sloIndex)">
+                <td class="cell relative align-middle" :class="highlight(gloIndex, sloIndex)">
                   <span v-if="cellDot(gloIndex, sloIndex, 'knowledge')" class="note-dot" v-bind="cellDot(gloIndex, sloIndex, 'knowledge')"></span>
                   <select v-model="slo.knowledge" class="doc-field" :class="{ 'text-base-content/40': !slo.knowledge }" aria-label="Knowledge dimension">
                     <option value="">Choose…</option>
@@ -761,7 +815,7 @@ function downloadBlob(blob, filename) {
                     <option value="metacognitive">Metacognitive</option>
                   </select>
                 </td>
-                <td class="cell relative" :class="highlight(gloIndex, sloIndex)">
+                <td class="cell relative align-middle" :class="highlight(gloIndex, sloIndex)">
                   <span v-if="cellDot(gloIndex, sloIndex, 'cognitive')" class="note-dot" v-bind="cellDot(gloIndex, sloIndex, 'cognitive')"></span>
                   <select v-model="slo.cognitive" class="doc-field" :class="{ 'text-base-content/40': !slo.cognitive }" aria-label="Cognitive process">
                     <option value="">Choose…</option>
@@ -780,9 +834,11 @@ function downloadBlob(blob, filename) {
                   @focusin="hoverRow(gloIndex, sloIndex)"
                   @focusout="hoverRow(null)"
                 >
+                  <div class="flex">
                   <button type="button" class="tool" title="Move specific objective up" :disabled="sloIndex === 0" @click="moveSlo(gloIndex, sloIndex, -1)"><ArrowUp class="size-3.5" /></button>
                   <button type="button" class="tool" title="Move specific objective down" :disabled="sloIndex === glo.slos.length - 1" @click="moveSlo(gloIndex, sloIndex, 1)"><ArrowDown class="size-3.5" /></button>
                   <button type="button" class="tool danger" title="Delete specific objective" @mouseenter="hover.danger = true" @mouseleave="hover.danger = false" @focus="hover.danger = true" @blur="hover.danger = false" @click="removeSlo(gloIndex, sloIndex)"><Trash2 class="size-3.5" /></button>
+                  </div>
                 </td>
                 <td
                   v-if="sloIndex === 0"
