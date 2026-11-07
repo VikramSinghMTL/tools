@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Table of Objectives Builder</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <script>
+    // Apply a saved light/dark choice before first paint (no flash). Without one, the theme follows the system.
+    var savedTheme = null;
+    try {
+      savedTheme = localStorage.getItem('table-of-objectives:theme');
+    } catch {
+      // Storage unavailable (e.g. blocked): follow the system.
+    }
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      document.documentElement.dataset.theme = savedTheme === 'dark' ? 'paper-dark' : 'paper';
+    }
+  </script>
+</head>
+
+<body class="bg-base-200 min-h-screen">
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

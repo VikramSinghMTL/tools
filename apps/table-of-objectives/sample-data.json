@@ -1,0 +1,54 @@
+{
+	"title": "College Teaching and Course Design",
+	"description": "While designing, developing and evaluating a college level course, the following will be considered: educational concepts, beliefs, values, practices, issues, philosophies and outcomes associated with learner-centered teaching. Teachers who participate in this course will: (1) examine the organizational structures and educational principles upon which the Cegep system is based, (2) participate in the process of curriculum planning and implementation, (3) analyze classroom processes and (4) engage in conscious reflection about your practice.",
+	"glos": [
+		{
+			"id": 1,
+			"description": "Understand why, when and how Cegeps were created.",
+			"slos": [
+				{
+					"id": 1.1,
+					"description": "Situate the creation of the Cegep system into a historical context.",
+					"knowledge": "conceptual",
+					"cognitive": "understand"
+				},
+				{
+					"id": 1.2,
+					"description": "Explain the unique role of the Cegeps in Quebec's educational ladder in relation to career and pre-university programs.",
+					"knowledge": "conceptual",
+					"cognitive": "understand"
+				},
+				{
+					"id": 1.3,
+					"description": "Define what is meant by a CORE curriculum (formation fondamentale or general education).",
+					"knowledge": "factual",
+					"cognitive": "remember"
+				},
+				{
+					"id": 1.4,
+					"description": "Examine your college's Mission Statement.",
+					"knowledge": "conceptual",
+					"cognitive": "evaluate"
+				}
+			]
+		},
+		{
+			"id": 2,
+			"description": "Examine the assumptions underlying an educational philosophy that promotes a competency/ability-based education and a program approach to college teaching.",
+			"slos": [
+				{
+					"id": 2.1,
+					"description": "Build and explain the concepts of competence or ability, of a program approach and a competency or ability-based approach to education.",
+					"knowledge": "conceptual",
+					"cognitive": "remember"
+				},
+				{
+					"id": 2.2,
+					"description": "Evaluate the principles underlying Competency-Based Education (CBE) to determine if they are consistent with current thinking in higher education about what constitutes \"quality\" in teaching and learning, or whether CBE represents an approach to higher education that is unique to Cegeps in Quebec.",
+					"knowledge": "conceptual",
+					"cognitive": "evaluate"
+				}
+			]
+		}
+	]
+}
