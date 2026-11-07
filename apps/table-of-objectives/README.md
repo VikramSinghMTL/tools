@@ -2,10 +2,9 @@
 
 Build a table of general and specific learning objectives, check them against Bloom's taxonomy, and export the result to Word or PDF (from the table menu).
 
-Requires Node 20.19+.
+Requires Node 20.19+. Lives at [tools.singh.gg/table-of-objectives](https://tools.singh.gg/table-of-objectives/). Run `npm install` from the root of the tools repo (it's an npm workspace), then from this folder:
 
 ```sh
-npm install
 npm run dev      # dev server at http://localhost:8080
 npm run build    # production build into dist/
 npm run preview  # serve the dist/ build locally
@@ -16,11 +15,11 @@ npm run typecheck  # type-check the JavaScript (checkJs)
 npm run check      # all three
 ```
 
-GitHub Actions runs lint, type check, tests and a build on every push and pull request (`.github/workflows/ci.yml`).
+GitHub Actions runs lint, type check, tests and a build on every push and pull request (`.github/workflows/table-of-objectives.yml` at the repo root).
 
 ## Deploying
 
-`dist/` is not committed. Run `npm run build` and upload the contents of `dist/` to any static web host, or point a host such as Netlify, Vercel or Cloudflare Pages at this repo with build command `npm run build` and output folder `dist`.
+Deployed with the rest of the tools repo: pushing to `main` builds every app and Vercel serves this one at `/table-of-objectives/`. `dist/` is not committed.
 
 ## Offline use
 

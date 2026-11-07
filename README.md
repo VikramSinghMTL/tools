@@ -7,6 +7,7 @@ Small browser-based teaching tools, served at `https://tools.singh.gg/<tool-name
 | Gradescope PDF Trimmer | `apps/gradescope-trimmer` | `/gradescope-trimmer/` |
 | Moodle → Lea Grade Export | `apps/moodlea` | `/moodlea/` |
 | Course Calendar Builder | `apps/course-calendar-builder` | `/course-calendar-builder/` |
+| Table of Objectives Builder | `apps/table-of-objectives` | `/table-of-objectives/` |
 
 ## Develop
 
@@ -30,7 +31,17 @@ node scripts/build.mjs moodlea       # just one tool
 2. If it uses Vite, set `base: './'` (or `'/<tool-name>/'`).
 3. Add a card for it in `site/index.html`.
 
-To bring in an existing repo with its history: `git subtree add --prefix=apps/<tool-name> <repo-url> main`.
+To bring in an existing repo with its full history, rewrite a copy so every commit already lives under `apps/<tool-name>/`, then merge it. Unlike `git subtree add`, this keeps `git log apps/<tool-name>` and `git blame` working back to the first commit:
+
+```bash
+git clone <repo-url> /tmp/<tool-name> && cd /tmp/<tool-name>
+git filter-repo --to-subdirectory-filter apps/<tool-name> --tag-rename '':'<tool-name>-'
+cd -  # back to this repo
+git fetch /tmp/<tool-name> main
+git merge --allow-unrelated-histories FETCH_HEAD
+```
+
+Then delete the app's own `package-lock.json` (workspaces share the root one) and move any `.github/workflows` files to the repo root.
 
 ## Deploy
 

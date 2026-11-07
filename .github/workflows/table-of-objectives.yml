@@ -1,0 +1,33 @@
+name: table-of-objectives
+
+on:
+  push:
+    paths:
+      - 'apps/table-of-objectives/**'
+      - 'package-lock.json'
+      - '.github/workflows/table-of-objectives.yml'
+  pull_request:
+    paths:
+      - 'apps/table-of-objectives/**'
+      - 'package-lock.json'
+      - '.github/workflows/table-of-objectives.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/table-of-objectives
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # Workspaces share the root lockfile, so install from the repo root.
+      - run: npm ci
+        working-directory: .
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
