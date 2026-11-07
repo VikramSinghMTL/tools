@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
-import Editor, { OnChange } from '@monaco-editor/react';
-import * as monacoEditor from 'monaco-editor';
+import Editor, { type OnChange } from "@monaco-editor/react";
+import type * as monacoEditor from "monaco-editor";
+import type React from "react";
+import { useRef } from "react";
 
 interface JsonEditorProps {
 	jsonData: string;
@@ -23,10 +24,10 @@ const JsonEditor: React.FC<JsonEditorProps> = ({ jsonData, setJsonData }) => {
 	};
 
 	const handleEditorDidMount = (
-		editor: monacoEditor.editor.IStandaloneCodeEditor
+		editor: monacoEditor.editor.IStandaloneCodeEditor,
 	) => {
 		editorRef.current = editor;
-		editor.getAction('editor.action.formatDocument')?.run();
+		editor.getAction("editor.action.formatDocument")?.run();
 	};
 
 	return (

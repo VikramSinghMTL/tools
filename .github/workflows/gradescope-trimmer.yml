@@ -1,0 +1,32 @@
+name: gradescope-trimmer
+
+on:
+  push:
+    paths:
+      - 'apps/gradescope-trimmer/**'
+      - 'package-lock.json'
+      - '.github/workflows/gradescope-trimmer.yml'
+  pull_request:
+    paths:
+      - 'apps/gradescope-trimmer/**'
+      - 'package-lock.json'
+      - '.github/workflows/gradescope-trimmer.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/gradescope-trimmer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      # Workspaces share the root lockfile, so install from the repo root.
+      - run: npm ci
+        working-directory: .
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build

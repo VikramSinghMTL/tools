@@ -46,6 +46,22 @@ This tool automates all three steps, saving significant time when processing lar
 -   If you encounter any issues, feel free to [email me](mailto:vikram.singh@johnabbott.qc.ca)
 -   View the project on [GitHub](https://github.com/VikramSinghMTL/tools)
 
+## Development
+
+Requires Node 20.19+. Run `npm install` from the root of the tools repo (it's an npm workspace), then from this folder:
+
+```sh
+npm run dev        # dev server
+npm run build      # production build into dist/
+npm run preview    # serve the dist/ build locally
+
+npm run lint       # Biome: formatting and lint
+npm run typecheck  # TypeScript
+npm run check      # both
+```
+
+GitHub Actions runs lint, type check and a build on every push and pull request (`.github/workflows/gradescope-trimmer.yml` at the repo root). Pushing to `main` deploys it with the rest of the tools repo.
+
 ## License
 
 This project is open-source and available under the [MIT License](LICENSE).

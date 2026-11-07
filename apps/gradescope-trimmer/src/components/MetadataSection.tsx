@@ -1,6 +1,6 @@
-import React from 'react';
-import { CheckCircle, Users, FileText, Info } from 'lucide-react';
-import type { SubmissionMetadata } from '../services/yamlParser';
+import { CheckCircle, FileText, Info, Users } from "lucide-react";
+import type React from "react";
+import type { SubmissionMetadata } from "../services/yamlParser";
 
 interface MetadataSectionProps {
 	metadata: SubmissionMetadata;
@@ -30,9 +30,7 @@ const MetadataSection: React.FC<MetadataSectionProps> = ({
 					<div className="text-latte-text dark:text-mocha-text bg-latte-mantle dark:bg-mocha-mantle p-3 rounded-lg border border-latte-surface0 dark:border-mocha-surface0">
 						<div className="flex items-center gap-2 mb-1">
 							<FileText className="w-4 h-4 text-latte-blue dark:text-mocha-blue" />
-							<span className="font-medium">
-								Total submissions:
-							</span>
+							<span className="font-medium">Total submissions:</span>
 						</div>
 						<span className="text-2xl font-bold text-latte-blue dark:text-mocha-blue">
 							{stats.totalSubmissions}
@@ -41,9 +39,7 @@ const MetadataSection: React.FC<MetadataSectionProps> = ({
 					<div className="text-latte-text dark:text-mocha-text bg-latte-mantle dark:bg-mocha-mantle p-3 rounded-lg border border-latte-surface0 dark:border-mocha-surface0">
 						<div className="flex items-center gap-2 mb-1">
 							<Users className="w-4 h-4 text-latte-mauve dark:text-mocha-mauve" />
-							<span className="font-medium">
-								Unique students:
-							</span>
+							<span className="font-medium">Unique students:</span>
 						</div>
 						<span className="text-2xl font-bold text-latte-mauve dark:text-mocha-mauve">
 							{stats.uniqueStudents}
@@ -61,12 +57,12 @@ const MetadataSection: React.FC<MetadataSectionProps> = ({
 				</div>
 				{stats.groupSubmissions > 0 && (
 					<div className="flex items-start gap-2 text-latte-yellow dark:text-mocha-yellow text-sm bg-latte-yellow/10 dark:bg-mocha-yellow/10 p-3 rounded-lg border border-latte-yellow/30 dark:border-mocha-yellow/30">
-						<Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+						<Info className="w-4 h-4 mt-0.5 shrink-0" />
 						<p>
-							<span className="font-medium">Note:</span>{' '}
+							<span className="font-medium">Note:</span>{" "}
 							{stats.groupSubmissions} group submission
-							{stats.groupSubmissions > 1 ? 's' : ''} found (will
-							use first student's ID)
+							{stats.groupSubmissions > 1 ? "s" : ""} found (will use first
+							student's ID)
 						</p>
 					</div>
 				)}
@@ -93,42 +89,34 @@ const MetadataSection: React.FC<MetadataSectionProps> = ({
 								</tr>
 							</thead>
 							<tbody className="bg-latte-mantle dark:bg-mocha-mantle divide-y divide-latte-surface0 dark:divide-mocha-surface0">
-								{Object.entries(metadata).map(
-									([filename, submission]) => {
-										const submitter =
-											submission.submitters[0];
-										return (
-											<tr
-												key={filename}
-												className="hover:bg-latte-surface0/50 dark:hover:bg-mocha-surface0/50 transition-colors"
-											>
-												<td className="px-4 py-2 text-sm text-latte-text dark:text-mocha-text font-mono">
-													{filename}
-												</td>
-												<td className="px-4 py-2 text-sm text-latte-text dark:text-mocha-text">
-													{submitter?.name || 'N/A'}
-													{submission.submitters
-														.length > 1 && (
-														<span className="ml-1 text-xs text-latte-subtext0 dark:text-mocha-subtext0">
-															(+
-															{submission
-																.submitters
-																.length -
-																1}{' '}
-															more)
-														</span>
-													)}
-												</td>
-												<td className="px-4 py-2 text-sm text-latte-subtext1 dark:text-mocha-subtext1">
-													{submitter?.sid || 'N/A'}
-												</td>
-												<td className="px-4 py-2 text-sm text-latte-subtext1 dark:text-mocha-subtext1">
-													{submitter?.email || 'N/A'}
-												</td>
-											</tr>
-										);
-									}
-								)}
+								{Object.entries(metadata).map(([filename, submission]) => {
+									const submitter = submission.submitters[0];
+									return (
+										<tr
+											key={filename}
+											className="hover:bg-latte-surface0/50 dark:hover:bg-mocha-surface0/50 transition-colors"
+										>
+											<td className="px-4 py-2 text-sm text-latte-text dark:text-mocha-text font-mono">
+												{filename}
+											</td>
+											<td className="px-4 py-2 text-sm text-latte-text dark:text-mocha-text">
+												{submitter?.name || "N/A"}
+												{submission.submitters.length > 1 && (
+													<span className="ml-1 text-xs text-latte-subtext0 dark:text-mocha-subtext0">
+														(+
+														{submission.submitters.length - 1} more)
+													</span>
+												)}
+											</td>
+											<td className="px-4 py-2 text-sm text-latte-subtext1 dark:text-mocha-subtext1">
+												{submitter?.sid || "N/A"}
+											</td>
+											<td className="px-4 py-2 text-sm text-latte-subtext1 dark:text-mocha-subtext1">
+												{submitter?.email || "N/A"}
+											</td>
+										</tr>
+									);
+								})}
 							</tbody>
 						</table>
 					</div>

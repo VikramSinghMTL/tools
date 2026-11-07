@@ -1,0 +1,32 @@
+name: course-calendar-builder
+
+on:
+  push:
+    paths:
+      - 'apps/course-calendar-builder/**'
+      - 'package-lock.json'
+      - '.github/workflows/course-calendar-builder.yml'
+  pull_request:
+    paths:
+      - 'apps/course-calendar-builder/**'
+      - 'package-lock.json'
+      - '.github/workflows/course-calendar-builder.yml'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/course-calendar-builder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      # Workspaces share the root lockfile, so install from the repo root.
+      - run: npm ci
+        working-directory: .
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build

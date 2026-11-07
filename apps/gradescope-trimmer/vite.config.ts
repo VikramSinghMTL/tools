@@ -1,18 +1,23 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 export default defineConfig({
-	plugins: [react()],
-	base: '/gradescope-trimmer/',
+	base: "/gradescope-trimmer/",
+	plugins: [react(), tailwindcss()],
 	build: {
-		outDir: 'dist',
-		sourcemap: true,
-		rollupOptions: {
+		rolldownOptions: {
 			output: {
-				manualChunks: {
-					react: ['react', 'react-dom'],
-					pdf: ['pdf-lib'],
-					zip: ['jszip'],
+				// Separate chunks for the big libraries, so they stay cached when only the app changes.
+				codeSplitting: {
+					groups: [
+						{
+							name: "react",
+							test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+						},
+						{ name: "pdf", test: /node_modules[\\/]pdf-lib[\\/]/ },
+						{ name: "zip", test: /node_modules[\\/]jszip[\\/]/ },
+					],
 				},
 			},
 		},

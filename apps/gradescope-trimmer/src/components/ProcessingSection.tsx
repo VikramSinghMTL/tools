@@ -1,5 +1,5 @@
-import React from 'react';
-import { Settings, Download, Loader2, FileCheck } from 'lucide-react';
+import { Download, FileCheck, Loader2, Settings } from "lucide-react";
+import type React from "react";
 
 interface ProcessingSectionProps {
 	pagesToKeep: number;
@@ -40,10 +40,10 @@ const ProcessingSection: React.FC<ProcessingSectionProps> = ({
 						value={pagesToKeep}
 						onChange={(e) =>
 							onPagesToKeepChange(
-								Math.max(1, parseInt(e.target.value) || 1)
+								Math.max(1, Number.parseInt(e.target.value, 10) || 1),
 							)
 						}
-						className="w-32 px-3 py-2 border border-latte-surface0 dark:border-mocha-surface0 rounded-md shadow-sm bg-latte-base dark:bg-mocha-base text-latte-text dark:text-mocha-text focus:outline-none focus:ring-2 focus:ring-latte-blue dark:focus:ring-mocha-blue focus:border-latte-blue dark:focus:border-mocha-blue transition-colors"
+						className="w-32 px-3 py-2 border border-latte-surface0 dark:border-mocha-surface0 rounded-md shadow-xs bg-latte-base dark:bg-mocha-base text-latte-text dark:text-mocha-text focus:outline-hidden focus:ring-2 focus:ring-latte-blue dark:focus:ring-mocha-blue focus:border-latte-blue dark:focus:border-mocha-blue transition-colors"
 					/>
 					<p className="mt-1 text-xs text-latte-subtext0 dark:text-mocha-subtext0">
 						Number of pages to keep from the beginning of each PDF
@@ -51,16 +51,16 @@ const ProcessingSection: React.FC<ProcessingSectionProps> = ({
 				</div>
 
 				<button
+					type="button"
 					onClick={onProcess}
 					disabled={isProcessing}
-					className="w-full bg-gradient-to-r from-latte-blue to-latte-sapphire dark:from-mocha-blue dark:to-mocha-sapphire hover:from-latte-sapphire hover:to-latte-sky dark:hover:from-mocha-sapphire dark:hover:to-mocha-sky disabled:from-latte-overlay0 disabled:to-latte-overlay1 dark:disabled:from-mocha-overlay0 dark:disabled:to-mocha-overlay1 text-latte-crust dark:text-mocha-crust font-semibold py-3 px-6 rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.02] disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+					className="w-full bg-linear-to-r from-latte-blue to-latte-sapphire dark:from-mocha-blue dark:to-mocha-sapphire hover:from-latte-sapphire hover:to-latte-sky dark:hover:from-mocha-sapphire dark:hover:to-mocha-sky disabled:from-latte-overlay0 disabled:to-latte-overlay1 dark:disabled:from-mocha-overlay0 dark:disabled:to-mocha-overlay1 text-latte-crust dark:text-mocha-crust font-semibold py-3 px-6 rounded-lg shadow-md transition-all duration-200 transform hover:scale-[1.02] disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center gap-2"
 				>
 					{isProcessing ? (
 						<>
 							<Loader2 className="w-5 h-5 animate-spin" />
 							<span>
-								Processing... {progress?.current}/
-								{progress?.total}
+								Processing... {progress?.current}/{progress?.total}
 							</span>
 						</>
 					) : (
@@ -81,12 +81,9 @@ const ProcessingSection: React.FC<ProcessingSectionProps> = ({
 						</div>
 						<div className="w-full bg-latte-surface0 dark:bg-mocha-surface0 rounded-full h-2.5 overflow-hidden">
 							<div
-								className="bg-gradient-to-r from-latte-blue to-latte-sapphire dark:from-mocha-blue dark:to-mocha-sapphire h-2.5 rounded-full transition-all duration-300 ease-out"
+								className="bg-linear-to-r from-latte-blue to-latte-sapphire dark:from-mocha-blue dark:to-mocha-sapphire h-2.5 rounded-full transition-all duration-300 ease-out"
 								style={{
-									width: `${
-										(progress.current / progress.total) *
-										100
-									}%`,
+									width: `${(progress.current / progress.total) * 100}%`,
 								}}
 							/>
 						</div>

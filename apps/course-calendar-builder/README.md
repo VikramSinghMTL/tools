@@ -1,50 +1,21 @@
-# React + TypeScript + Vite
+# Course Calendar Builder
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Describe a course calendar as JSON (activity types and their colours, columns, and the activities in each week) and see it rendered as a week-by-week table as you type. Export the calendar as HTML and CSS to embed elsewhere, or export and import the JSON to keep working on it later.
 
-Currently, two official plugins are available:
+Lives at [tools.singh.gg/course-calendar-builder](https://tools.singh.gg/course-calendar-builder/).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Development
 
-## Expanding the ESLint configuration
+Requires Node 20.19+. Run `npm install` from the root of the tools repo (it's an npm workspace), then from this folder:
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+```sh
+npm run dev        # dev server
+npm run build      # production build into dist/
+npm run preview    # serve the dist/ build locally
 
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+npm run lint       # Biome: formatting and lint
+npm run typecheck  # TypeScript
+npm run check      # both
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+GitHub Actions runs lint, type check and a build on every push and pull request (`.github/workflows/course-calendar-builder.yml` at the repo root). Pushing to `main` deploys it with the rest of the tools repo.

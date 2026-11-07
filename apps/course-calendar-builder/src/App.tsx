@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import JsonEditor from './JsonEditor';
-import Preview from './Preview';
-import Divider from './Divider';
+import type React from "react";
+import { useCallback, useState } from "react";
+import { activitiesIn, type CalendarData, type WeekData } from "./calendar";
+import Divider from "./Divider";
+import JsonEditor from "./JsonEditor";
+import Preview from "./Preview";
 
 const App: React.FC = () => {
 	const [jsonData, setJsonData] = useState<string>(`{
@@ -12,14 +14,15 @@ const App: React.FC = () => {
 
 	const [editorWidth, setEditorWidth] = useState<number>(33);
 
-	const handleDrag = (deltaX: number) => {
+	// Stable, so the divider doesn't re-register its listeners on every render.
+	const handleDrag = useCallback((deltaX: number) => {
 		setEditorWidth((prevWidth) =>
 			Math.min(
 				80,
-				Math.max(20, prevWidth + (deltaX / window.innerWidth) * 100)
-			)
+				Math.max(20, prevWidth + (deltaX / window.innerWidth) * 100),
+			),
 		);
-	};
+	}, []);
 
 	// Function to handle JSON import
 	const importJSON = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,16 +37,16 @@ const App: React.FC = () => {
 		}
 
 		// Reset the input value to allow the same file to be uploaded again
-		event.target.value = '';
+		event.target.value = "";
 	};
 
 	// Function to export the current JSON data
 	const exportJSON = () => {
-		const blob = new Blob([jsonData], { type: 'application/json' });
+		const blob = new Blob([jsonData], { type: "application/json" });
 		const url = URL.createObjectURL(blob);
-		const link = document.createElement('a');
+		const link = document.createElement("a");
 		link.href = url;
-		link.download = 'calendar-config.json';
+		link.download = "calendar-config.json";
 		link.click();
 		URL.revokeObjectURL(url);
 	};
@@ -64,11 +67,11 @@ const App: React.FC = () => {
 </body>
 </html>
     `;
-		const blob = new Blob([calendarHTML], { type: 'text/html' });
+		const blob = new Blob([calendarHTML], { type: "text/html" });
 		const url = URL.createObjectURL(blob);
-		const link = document.createElement('a');
+		const link = document.createElement("a");
 		link.href = url;
-		link.download = 'calendar.html';
+		link.download = "calendar.html";
 		link.click();
 		URL.revokeObjectURL(url);
 	};
@@ -76,11 +79,11 @@ const App: React.FC = () => {
 	// Function to generate exportable CSS for the calendar
 	const exportCSS = () => {
 		const calendarCSS = generateCalendarCSS();
-		const blob = new Blob([calendarCSS], { type: 'text/css' });
+		const blob = new Blob([calendarCSS], { type: "text/css" });
 		const url = URL.createObjectURL(blob);
-		const link = document.createElement('a');
+		const link = document.createElement("a");
 		link.href = url;
-		link.download = 'calendar.css';
+		link.download = "calendar.css";
 		link.click();
 		URL.revokeObjectURL(url);
 	};
@@ -99,9 +102,9 @@ const App: React.FC = () => {
         border-radius: 5px;
         font-weight: bold;
       }
-    `
+    `,
 				)
-				.join('');
+				.join("");
 
 			return `
 /* Calendar Styles */
@@ -149,50 +152,50 @@ th, td {
 ${typeStyles}
     `;
 		} catch (error) {
-			console.error('Invalid JSON format for CSS generation', error);
-			return '/* Error generating CSS */';
+			console.error("Invalid JSON format for CSS generation", error);
+			return "/* Error generating CSS */";
 		}
 	};
 
 	// Helper function to generate calendar HTML content from JSON data
 	const generateCalendarHTML = () => {
 		try {
-			const data = JSON.parse(jsonData);
+			const data: CalendarData = JSON.parse(jsonData);
 			const columns = data.columns
 				.map((column: string) => `<th>${column}</th>`)
-				.join('');
+				.join("");
 			const weeks = data.weeks
 				.map(
-					(week: any) => `
+					(week: WeekData) => `
         <tr>
           <td class="p-1">${week.week}</td>
           ${data.columns
-				.map(
-					(col: string) => `
+						.map(
+							(col: string) => `
             <td>
               <ul>
-                ${(week[col] || [])
-					.map(
-						(activity: any) => `
+                ${activitiesIn(week, col)
+									.map(
+										(activity) => `
                   <li class="vik-item vik-${activity.type}">
                     ${activity.title} ${
-							activity.due
-								? `<span class="due">${activity.due}</span>`
-								: ''
-						}
+											activity.due
+												? `<span class="due">${activity.due}</span>`
+												: ""
+										}
                   </li>
-                `
-					)
-					.join('')}
+                `,
+									)
+									.join("")}
               </ul>
             </td>
-          `
-				)
-				.join('')}
+          `,
+						)
+						.join("")}
         </tr>
-      `
+      `,
 				)
-				.join('');
+				.join("");
 
 			return `
         <table class="table-auto">
@@ -205,18 +208,15 @@ ${typeStyles}
         </table>
       `;
 		} catch (error) {
-			console.error('Invalid JSON format', error);
-			return '<p>Error loading calendar data</p>';
+			console.error("Invalid JSON format", error);
+			return "<p>Error loading calendar data</p>";
 		}
 	};
 
 	return (
 		<div className="flex flex-col h-screen overflow-hidden">
 			<div className="flex flex-1 overflow-hidden">
-				<div
-					className="overflow-hidden"
-					style={{ width: `${editorWidth}%` }}
-				>
+				<div className="overflow-hidden" style={{ width: `${editorWidth}%` }}>
 					<JsonEditor jsonData={jsonData} setJsonData={setJsonData} />
 				</div>
 				<Divider onDrag={handleDrag} />
@@ -234,35 +234,38 @@ ${typeStyles}
 			<div className="flex justify-between p-4 bg-gray-200 border-t border-gray-300">
 				{/* Export HTML Button */}
 				<button
+					type="button"
 					onClick={exportHTML}
-					className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 mr-2"
+					className="p-2 bg-blue-500 text-white rounded-sm hover:bg-blue-600 mr-2"
 				>
 					Export HTML
 				</button>
 
 				{/* Export CSS Button */}
 				<button
+					type="button"
 					onClick={exportCSS}
-					className="p-2 bg-green-500 text-white rounded hover:bg-green-600"
+					className="p-2 bg-green-500 text-white rounded-sm hover:bg-green-600"
 				>
 					Export CSS
 				</button>
 
 				{/* Import JSON Button */}
-				<label className="p-2 bg-gray-500 text-white rounded hover:bg-gray-600 cursor-pointer">
+				<label className="p-2 bg-gray-500 text-white rounded-sm hover:bg-gray-600 cursor-pointer">
 					Import JSON
 					<input
 						type="file"
 						accept=".json"
 						onChange={importJSON}
-						style={{ display: 'none' }}
+						style={{ display: "none" }}
 					/>
 				</label>
 
 				{/* Export JSON Button */}
 				<button
+					type="button"
 					onClick={exportJSON}
-					className="p-2 bg-green-500 text-white rounded hover:bg-green-600 ml-2"
+					className="p-2 bg-green-500 text-white rounded-sm hover:bg-green-600 ml-2"
 				>
 					Export JSON
 				</button>
