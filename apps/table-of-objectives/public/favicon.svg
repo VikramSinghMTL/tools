@@ -1,5 +1,6 @@
 <!-- Lucide "table-2" icon (ISC licence, https://lucide.dev). -->
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <title>Table of Objectives</title>
   <style>
     svg { stroke: #1f4a68; }
     @media (prefers-color-scheme: dark) { svg { stroke: #9cc0dc; } }

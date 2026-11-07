@@ -9,17 +9,17 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="/site.webmanifest">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400..700&display=swap">
   <script>
     // Apply a saved light/dark choice before first paint (no flash). Without one, the theme follows the system.
+    var savedTheme = null;
     try {
-      var theme = localStorage.getItem('table-of-objectives:theme');
-      if (theme === 'light' || theme === 'dark') {
-        document.documentElement.dataset.theme = theme === 'dark' ? 'paper-dark' : 'paper';
-      }
-    } catch (e) {}
+      savedTheme = localStorage.getItem('table-of-objectives:theme');
+    } catch {
+      // Storage unavailable (e.g. blocked): follow the system.
+    }
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      document.documentElement.dataset.theme = savedTheme === 'dark' ? 'paper-dark' : 'paper';
+    }
   </script>
 </head>
 

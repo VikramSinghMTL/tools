@@ -1,490 +1,596 @@
 <script>
-import { autosize } from './autosize.js';
-import VerbsDialog from './VerbsDialog.vue';
 import {
-  createTable,
-  deleteTable,
-  isEmptyTable,
-  isTableKey,
-  migrateLegacyTable,
-  parseBackup,
-  readAcceptedVerbs,
-  readCurrentId,
-  readTables,
-  readTheme,
-  readVerifyMode,
-  toBackup,
-  writeAcceptedVerbs,
-  writeCurrentId,
-  writeTable,
-  writeTheme,
-  writeVerifyMode,
-} from './library.js';
+	ArrowDown,
+	ArrowUp,
+	BookOpen,
+	Check,
+	ChevronDown,
+	Copy,
+	Download,
+	FileDown,
+	FilePlus,
+	Info,
+	ListChecks,
+	Moon,
+	Plus,
+	Sun,
+	Trash2,
+	Upload,
+} from "@lucide/vue";
+import { autosize } from "./autosize.js";
 import {
-  ArrowDown,
-  ArrowUp,
-  BookOpen,
-  Check,
-  ChevronDown,
-  Copy,
-  Download,
-  FileDown,
-  FilePlus,
-  Info,
-  ListChecks,
-  Moon,
-  Plus,
-  Sun,
-  Trash2,
-  Upload,
-} from '@lucide/vue';
+	createTable,
+	deleteTable,
+	isEmptyTable,
+	isTableKey,
+	migrateLegacyTable,
+	parseBackup,
+	readAcceptedVerbs,
+	readCurrentId,
+	readTables,
+	readTheme,
+	readVerifyMode,
+	toBackup,
+	writeAcceptedVerbs,
+	writeCurrentId,
+	writeTable,
+	writeTheme,
+	writeVerifyMode,
+} from "./library.js";
+import * as ops from "./table-ops.js";
+import VerbsDialog from "./VerbsDialog.vue";
 
-const systemDarkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+const systemDarkQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
 // Dot colours for Verify notes.
 const SEVERITY_DOT = {
-  error: 'bg-error',
-  warning: 'bg-warning',
-  hint: 'bg-base-content/35',
+	error: "bg-error",
+	warning: "bg-warning",
+	hint: "bg-base-content/35",
 };
 const SEVERITY_RANK = { error: 0, warning: 1, hint: 2 };
 
-const KNOWLEDGE_LABELS = ['Factual', 'Conceptual', 'Procedural', 'Metacognitive'];
-const COGNITIVE_LABELS = ['Remember', 'Understand', 'Apply', 'Analyze', 'Evaluate', 'Create'];
+const KNOWLEDGE_LABELS = [
+	"Factual",
+	"Conceptual",
+	"Procedural",
+	"Metacognitive",
+];
+const COGNITIVE_LABELS = [
+	"Remember",
+	"Understand",
+	"Apply",
+	"Analyze",
+	"Evaluate",
+	"Create",
+];
 
-const relativeTime = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+const relativeTime = new Intl.RelativeTimeFormat(undefined, {
+	numeric: "auto",
+});
 
 export default {
-  directives: { autosize },
-  components: {
-    VerbsDialog,
-    ArrowDown,
-    ArrowUp,
-    BookOpen,
-    Check,
-    ChevronDown,
-    Copy,
-    Download,
-    FileDown,
-    FilePlus,
-    Info,
-    ListChecks,
-    Moon,
-    Plus,
-    Sun,
-    Trash2,
-    Upload,
-  },
-  data() {
-    return {
-      themeOverride: readTheme(), // 'light' | 'dark' | null (follow the system)
-      systemDark: systemDarkQuery.matches,
-      tables: [],
-      currentId: null,
-      storageError: '',
-      importError: '',
-      verifyMode: readVerifyMode(),
-      acceptedVerbs: readAcceptedVerbs(),
-      verification: null, // Result of verifyTable() for the current table, when verify mode is on.
-      verifyPending: false, // An edit is waiting for the user to leave the field before re-checking.
-      showDismissed: false,
-      knowledgeLabels: KNOWLEDGE_LABELS,
-      cognitiveLabels: COGNITIVE_LABELS,
-      // Which rows the margin buttons under the pointer (or keyboard focus) act on.
-      hover: { glo: null, slo: null, danger: false },
-    };
-  },
-  computed: {
-    table() {
-      return this.tables.find((table) => table.id === this.currentId);
-    },
-    // The editing methods below work on the current table through these.
-    title: {
-      get() { return this.table.title; },
-      set(value) { this.table.title = value; },
-    },
-    description: {
-      get() { return this.table.description; },
-      set(value) { this.table.description = value; },
-    },
-    glos: {
-      get() { return this.table.glos; },
-      set(value) { this.table.glos = value; },
-    },
-    isDark() {
-      return this.themeOverride ? this.themeOverride === 'dark' : this.systemDark;
-    },
-    sortedTables() {
-      return [...this.tables].sort((a, b) => b.updatedAt - a.updatedAt);
-    },
-    // Active (not dismissed) notes per cell, keyed "glo:slo:field".
-    cellNotes() {
-      const cells = {};
-      for (const note of this.verification?.notes ?? []) {
-        if (note.dismissed || note.glo === null || !note.field) continue;
-        (cells[`${note.glo}:${note.slo}:${note.field}`] ??= []).push(note);
-      }
-      return cells;
-    },
-    // Notes grouped by objective, in table order.
-    noteGroups() {
-      const groups = [];
-      for (const note of this.verification?.notes ?? []) {
-        if (note.dismissed && !this.showDismissed) continue;
-        let group = groups.find((g) => g.glo === note.glo && g.slo === note.slo);
-        if (!group) groups.push((group = { glo: note.glo, slo: note.slo, label: note.label, notes: [] }));
-        group.notes.push(note);
-      }
-      for (const group of groups) {
-        group.notes.sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);
-      }
-      // Course-wide notes last.
-      return groups.sort((a, b) => (a.glo === null) - (b.glo === null));
-    },
-    verifySummary() {
-      const counts = this.verification?.counts;
-      if (!counts) return [];
-      return [
-        ['error', counts.error, counts.error === 1 ? 'error' : 'errors'],
-        ['warning', counts.warning, counts.warning === 1 ? 'warning' : 'warnings'],
-        ['hint', counts.hint, counts.hint === 1 ? 'hint' : 'hints'],
-      ].filter(([, n]) => n > 0);
-    },
-    gridMax() {
-      return Math.max(1, ...(this.verification?.grid.flat() ?? []));
-    },
-  },
-  created() {
-    migrateLegacyTable();
-    this.tables = readTables();
+	directives: { autosize },
+	components: {
+		VerbsDialog,
+		ArrowDown,
+		ArrowUp,
+		BookOpen,
+		Check,
+		ChevronDown,
+		Copy,
+		Download,
+		FileDown,
+		FilePlus,
+		Info,
+		ListChecks,
+		Moon,
+		Plus,
+		Sun,
+		Trash2,
+		Upload,
+	},
+	data() {
+		return {
+			themeOverride: readTheme(), // 'light' | 'dark' | null (follow the system)
+			systemDark: systemDarkQuery.matches,
+			tables: [],
+			currentId: null,
+			storageError: "",
+			importError: "",
+			verifyMode: readVerifyMode(),
+			acceptedVerbs: readAcceptedVerbs(),
+			verification: null, // Result of verifyTable() for the current table, when verify mode is on.
+			verifyPending: false, // An edit is waiting for the user to leave the field before re-checking.
+			showDismissed: false,
+			knowledgeLabels: KNOWLEDGE_LABELS,
+			cognitiveLabels: COGNITIVE_LABELS,
+			// Which rows the margin buttons under the pointer (or keyboard focus) act on.
+			hover: { glo: null, slo: null, danger: false },
+			undo: null, // The last deletion, while it can still be undone: { tableId, before, after, message }
+			menuOpen: false, // The table menu.
+		};
+	},
+	computed: {
+		table() {
+			return this.tables.find((table) => table.id === this.currentId);
+		},
+		// The editing methods below work on the current table through these.
+		title: {
+			get() {
+				return this.table.title;
+			},
+			set(value) {
+				this.table.title = value;
+			},
+		},
+		description: {
+			get() {
+				return this.table.description;
+			},
+			set(value) {
+				this.table.description = value;
+			},
+		},
+		glos: {
+			get() {
+				return this.table.glos;
+			},
+			set(value) {
+				this.table.glos = value;
+			},
+		},
+		isDark() {
+			return this.themeOverride
+				? this.themeOverride === "dark"
+				: this.systemDark;
+		},
+		sortedTables() {
+			return [...this.tables].sort((a, b) => b.updatedAt - a.updatedAt);
+		},
+		// Active (not dismissed) notes per cell, keyed "glo:slo:field".
+		cellNotes() {
+			const cells = {};
+			for (const note of this.verification?.notes ?? []) {
+				if (note.dismissed || note.glo === null || !note.field) continue;
+				const key = `${note.glo}:${note.slo}:${note.field}`;
+				if (!cells[key]) cells[key] = [];
+				cells[key].push(note);
+			}
+			return cells;
+		},
+		// Notes grouped by objective, in table order.
+		noteGroups() {
+			const groups = [];
+			for (const note of this.verification?.notes ?? []) {
+				if (note.dismissed && !this.showDismissed) continue;
+				let group = groups.find(
+					(g) => g.glo === note.glo && g.slo === note.slo,
+				);
+				if (!group) {
+					group = { glo: note.glo, slo: note.slo, label: note.label, notes: [] };
+					groups.push(group);
+				}
+				group.notes.push(note);
+			}
+			for (const group of groups) {
+				group.notes.sort(
+					(a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity],
+				);
+			}
+			// Course-wide notes last.
+			return groups.sort((a, b) => (a.glo === null) - (b.glo === null));
+		},
+		verifySummary() {
+			const counts = this.verification?.counts;
+			if (!counts) return [];
+			return [
+				["error", counts.error, counts.error === 1 ? "error" : "errors"],
+				[
+					"warning",
+					counts.warning,
+					counts.warning === 1 ? "warning" : "warnings",
+				],
+				["hint", counts.hint, counts.hint === 1 ? "hint" : "hints"],
+			].filter(([, n]) => n > 0);
+		},
+		gridMax() {
+			return Math.max(1, ...(this.verification?.grid.flat() ?? []));
+		},
+	},
+	created() {
+		migrateLegacyTable();
+		this.tables = readTables();
 
-    const savedId = readCurrentId();
-    if (this.tables.some((table) => table.id === savedId)) {
-      this.currentId = savedId;
-    } else if (this.tables.length) {
-      this.currentId = this.sortedTables[0].id;
-    } else {
-      this.openTable(createTable());
-    }
+		const savedId = readCurrentId();
+		if (this.tables.some((table) => table.id === savedId)) {
+			this.currentId = savedId;
+		} else if (this.tables.length) {
+			this.currentId = this.sortedTables[0].id;
+		} else {
+			this.openTable(createTable());
+		}
 
-    // Auto-save the current table on every edit.
-    this.$watch(
-      () => [this.currentId, JSON.stringify({ title: this.title, description: this.description, glos: this.glos, dismissed: this.table.dismissed })],
-      ([id, json], [previousId, previousJson]) => {
-        // Switching tables, or a sync from another tab that changed nothing, is not an edit.
-        if (id !== previousId || json === previousJson) return;
-        this.table.updatedAt = Date.now();
-        this.persist(this.table);
-      }
-    );
+		// Auto-save the current table on every edit.
+		this.$watch(
+			() => [
+				this.currentId,
+				JSON.stringify({
+					title: this.title,
+					description: this.description,
+					glos: this.glos,
+					dismissed: this.table.dismissed,
+				}),
+			],
+			([id, json], [previousId, previousJson]) => {
+				// Switching tables, or a sync from another tab that changed nothing, is not an edit.
+				if (id !== previousId || json === previousJson) return;
+				this.table.updatedAt = Date.now();
+				this.persist(this.table);
+			},
+		);
 
-    // Verify mode: re-check after edits, but wait until the user leaves a text box they are typing in.
-    this.$watch(
-      () => JSON.stringify([this.verifyMode, this.currentId, this.glos, this.table.dismissed, this.acceptedVerbs]),
-      () => {
-        const typingIn = document.activeElement;
-        if (this.verifyMode && typingIn?.tagName === 'TEXTAREA' && typingIn.closest('#table-of-objectives')) {
-          this.verifyPending = true;
-        } else {
-          this.runVerify();
-        }
-      },
-      { immediate: true }
-    );
-    document.addEventListener('focusout', () => {
-      if (this.verifyPending) setTimeout(() => this.runVerify());
-    });
+		// Verify mode: re-check after edits, but wait until the user leaves a text box they are typing in.
+		this.$watch(
+			() =>
+				JSON.stringify([
+					this.verifyMode,
+					this.currentId,
+					this.glos,
+					this.table.dismissed,
+					this.acceptedVerbs,
+				]),
+			() => {
+				const typingIn = document.activeElement;
+				if (
+					this.verifyMode &&
+					typingIn?.tagName === "TEXTAREA" &&
+					typingIn.closest("#table-of-objectives")
+				) {
+					this.verifyPending = true;
+				} else {
+					this.runVerify();
+				}
+			},
+			{ immediate: true },
+		);
+		document.addEventListener("focusout", () => {
+			if (this.verifyPending) setTimeout(() => this.runVerify());
+		});
 
-    systemDarkQuery.addEventListener('change', (event) => {
-      this.systemDark = event.matches;
-    });
+		// An undo is only offered until something else changes.
+		this.$watch(
+			() => [this.currentId, JSON.stringify(this.glos)],
+			([id, json]) => {
+				if (this.undo && (id !== this.undo.tableId || json !== this.undo.after))
+					this.undo = null;
+			},
+		);
+		// The table menu closes on a click outside it, or on Escape (returning focus to its button).
+		document.addEventListener("pointerdown", (event) => {
+			if (
+				this.menuOpen &&
+				event.target instanceof Node &&
+				!this.$refs.menu.contains(event.target)
+			) {
+				this.menuOpen = false;
+			}
+		});
+		document.addEventListener("keydown", (event) => {
+			if (this.menuOpen && event.key === "Escape") {
+				this.menuOpen = false;
+				this.$refs.menu.querySelector("button")?.focus();
+			}
+		});
 
-    // Keep the list (and the open table) in step with other tabs.
-    window.addEventListener('storage', (event) => {
-      if (isTableKey(event.key)) this.syncFromStorage();
-    });
-  },
-  methods: {
-    // Flips light/dark. Picking what the system already uses clears the override, so the app follows
-    // the system again from then on.
-    toggleTheme() {
-      const next = this.isDark ? 'light' : 'dark';
-      this.themeOverride = next === (this.systemDark ? 'dark' : 'light') ? null : next;
-      writeTheme(this.themeOverride);
+		// Cmd/Ctrl+Z undoes a deletion, unless focus is in a field (which has its own undo).
+		document.addEventListener("keydown", (event) => {
+			const inField =
+				event.target instanceof Element &&
+				event.target.closest("input, textarea, select");
+			if (
+				this.undo &&
+				!inField &&
+				(event.metaKey || event.ctrlKey) &&
+				!event.shiftKey &&
+				event.key.toLowerCase() === "z"
+			) {
+				event.preventDefault();
+				this.undoDelete();
+			}
+		});
 
-      const root = document.documentElement;
-      if (this.themeOverride) root.dataset.theme = this.themeOverride === 'dark' ? 'paper-dark' : 'paper';
-      else delete root.dataset.theme;
-    },
-    hoverRow(glo, slo = null) {
-      this.hover = { glo, slo, danger: false };
-    },
-    // Highlight class for a cell. GLO cells and "Add" rows pass sloIndex -1, so they light up
-    // only when a whole GLO is targeted.
-    highlight(gloIndex, sloIndex) {
-      const { glo, slo, danger } = this.hover;
-      if (glo !== gloIndex || (slo !== null && slo !== sloIndex)) return null;
-      return danger ? 'hl-danger' : 'hl';
-    },
-    dotClass(severity) {
-      return SEVERITY_DOT[severity];
-    },
-    // The most severe note for a cell, plus all of its messages for the tooltip.
-    cellDot(glo, slo, field) {
-      const notes = this.cellNotes[`${glo}:${slo}:${field}`];
-      if (!notes) return null;
-      const worst = notes.reduce((a, b) => (SEVERITY_RANK[b.severity] < SEVERITY_RANK[a.severity] ? b : a));
-      return { class: SEVERITY_DOT[worst.severity], title: notes.map((n) => n.message).join('\n') };
-    },
-    async runVerify() {
-      this.verifyPending = false;
-      if (!this.verifyMode) {
-        this.verification = null;
-        return;
-      }
+		systemDarkQuery.addEventListener("change", (event) => {
+			this.systemDark = event.matches;
+		});
 
-      // Loaded on demand: the verb list is ~70 KB.
-      const { verifyTable } = await import('./verify.js');
-      const table = this.table;
-      const result = verifyTable(table, { acceptedVerbs: this.acceptedVerbs, dismissed: table.dismissed });
+		// Keep the list (and the open table) in step with other tabs.
+		window.addEventListener("storage", (event) => {
+			if (isTableKey(event.key)) this.syncFromStorage();
+		});
+	},
+	methods: {
+		// Flips light/dark. Picking what the system already uses clears the override, so the app follows
+		// the system again from then on.
+		toggleTheme() {
+			const next = this.isDark ? "light" : "dark";
+			this.themeOverride =
+				next === (this.systemDark ? "dark" : "light") ? null : next;
+			writeTheme(this.themeOverride);
 
-      // Forget dismissals whose note no longer exists: the objective changed, so it is re-checked.
-      const live = new Set(result.notes.map((note) => note.key));
-      if (table.dismissed.some((key) => !live.has(key))) {
-        table.dismissed = table.dismissed.filter((key) => live.has(key));
-      }
+			const root = document.documentElement;
+			if (this.themeOverride)
+				root.dataset.theme =
+					this.themeOverride === "dark" ? "paper-dark" : "paper";
+			else delete root.dataset.theme;
+		},
+		keyOf: ops.keyOf,
+		hoverRow(glo, slo = null) {
+			this.hover = { glo, slo, danger: false };
+		},
+		// Highlight class for a cell. GLO cells and "Add" rows pass sloIndex -1, so they light up
+		// only when a whole GLO is targeted.
+		highlight(gloIndex, sloIndex) {
+			const { glo, slo, danger } = this.hover;
+			if (glo !== gloIndex || (slo !== null && slo !== sloIndex)) return null;
+			return danger ? "hl-danger" : "hl";
+		},
+		dotClass(severity) {
+			return SEVERITY_DOT[severity];
+		},
+		// The most severe note for a cell, plus all of its messages for the tooltip.
+		cellDot(glo, slo, field) {
+			const notes = this.cellNotes[`${glo}:${slo}:${field}`];
+			if (!notes) return null;
+			const worst = notes.reduce((a, b) =>
+				SEVERITY_RANK[b.severity] < SEVERITY_RANK[a.severity] ? b : a,
+			);
+			return {
+				class: SEVERITY_DOT[worst.severity],
+				title: notes.map((n) => n.message).join("\n"),
+			};
+		},
+		async runVerify() {
+			this.verifyPending = false;
+			if (!this.verifyMode) {
+				this.verification = null;
+				return;
+			}
 
-      this.verification = result;
-    },
-    toggleVerify() {
-      writeVerifyMode(this.verifyMode);
-    },
-    dismissNote(note) {
-      this.table.dismissed = [...this.table.dismissed, note.key];
-    },
-    restoreNote(note) {
-      this.table.dismissed = this.table.dismissed.filter((key) => key !== note.key);
-    },
-    acceptVerb(word) {
-      if (!this.acceptedVerbs.includes(word)) {
-        this.acceptedVerbs = [...this.acceptedVerbs, word].sort();
-        writeAcceptedVerbs(this.acceptedVerbs);
-      }
-    },
-    removeAcceptedVerb(word) {
-      this.acceptedVerbs = this.acceptedVerbs.filter((verb) => verb !== word);
-      writeAcceptedVerbs(this.acceptedVerbs);
-    },
-    // Scrolls to a note's objective and briefly highlights it, like the margin buttons do.
-    revealRow(group) {
-      if (group.glo === null) return;
-      const row = document.querySelector(`[data-row="${group.glo}-${group.slo ?? 0}"]`);
-      row?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      this.hoverRow(group.glo, group.slo);
-      clearTimeout(this.revealTimer);
-      this.revealTimer = setTimeout(() => {
-        if (this.hover.glo === group.glo && this.hover.slo === group.slo) this.hoverRow(null);
-      }, 1600);
-    },
-    tableName(table) {
-      return table.title.trim() || 'Untitled table';
-    },
-    editedAgo(table) {
-      const seconds = (table.updatedAt - Date.now()) / 1000;
-      if (seconds > -60) return 'just now';
-      if (seconds > -3600) return relativeTime.format(Math.round(seconds / 60), 'minute');
-      if (seconds > -86400) return relativeTime.format(Math.round(seconds / 3600), 'hour');
-      if (seconds > -86400 * 7) return relativeTime.format(Math.round(seconds / 86400), 'day');
-      return new Date(table.updatedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-    },
-    persist(table) {
-      try {
-        writeTable(table);
-        this.storageError = '';
-      } catch (error) {
-        this.storageError = 'Your changes could not be saved in this browser (' + error.message + '). Export a backup to keep a copy.';
-      }
-    },
-    syncFromStorage() {
-      const stored = readTables();
-      const current = this.table;
-      if (current && !stored.some((table) => table.id === current.id)) stored.push(current);
-      this.tables = stored;
-    },
-    closeMenu() {
-      document.activeElement?.blur();
-    },
-    // Opens a table, dropping the one being left if nothing was ever typed into it.
-    openTable(table) {
-      const leaving = this.table;
-      if (leaving && leaving.id !== table.id && isEmptyTable(leaving)) {
-        this.tables = this.tables.filter((t) => t.id !== leaving.id);
-      }
-      if (!this.tables.includes(table)) this.tables.push(table);
+			// Loaded on demand: the verb list is ~70 KB.
+			const { verifyTable } = await import("./verify.js");
+			const table = this.table;
+			const result = verifyTable(table, {
+				acceptedVerbs: this.acceptedVerbs,
+				dismissed: table.dismissed,
+			});
 
-      this.currentId = table.id;
-      this.importError = '';
-      writeCurrentId(table.id);
-      this.closeMenu();
-    },
-    newTable() {
-      if (isEmptyTable(this.table)) {
-        this.closeMenu();
-        return;
-      }
-      this.openTable(createTable());
-    },
-    duplicateTable() {
-      // A JSON round trip deep-copies the reactive table (structuredClone rejects Vue proxies).
-      const copy = createTable({ ...parseBackup(toBackup(this.table)), title: this.tableName(this.table) + ' (copy)' });
-      this.openTable(copy);
-      this.persist(copy);
-    },
-    deleteCurrentTable() {
-      if (!confirm('Delete "' + this.tableName(this.table) + '"? This cannot be undone.')) return;
+			// Forget dismissals whose note no longer exists: the objective changed, so it is re-checked.
+			const live = new Set(result.notes.map((note) => note.key));
+			if (table.dismissed.some((key) => !live.has(key))) {
+				table.dismissed = table.dismissed.filter((key) => live.has(key));
+			}
 
-      const id = this.currentId;
-      deleteTable(id);
-      this.tables = this.tables.filter((table) => table.id !== id);
-      this.openTable(this.sortedTables[0] ?? createTable());
-    },
-    exportBackup() {
-      const file = new Blob([toBackup(this.table)], { type: 'application/json' });
-      downloadBlob(file, this.tableName(this.table).replace(/[\\/:*?"<>|]/g, '-') + '.json');
-      this.closeMenu();
-    },
-    importBackup(event) {
-      const file = event.target.files[0];
-      // Allow importing the same file again later.
-      event.target.value = '';
-      if (!file) return;
+			this.verification = result;
+		},
+		toggleVerify() {
+			writeVerifyMode(this.verifyMode);
+		},
+		dismissNote(note) {
+			this.table.dismissed = [...this.table.dismissed, note.key];
+		},
+		restoreNote(note) {
+			this.table.dismissed = this.table.dismissed.filter(
+				(key) => key !== note.key,
+			);
+		},
+		acceptVerb(word) {
+			if (!this.acceptedVerbs.includes(word)) {
+				this.acceptedVerbs = [...this.acceptedVerbs, word].sort();
+				writeAcceptedVerbs(this.acceptedVerbs);
+			}
+		},
+		removeAcceptedVerb(word) {
+			this.acceptedVerbs = this.acceptedVerbs.filter((verb) => verb !== word);
+			writeAcceptedVerbs(this.acceptedVerbs);
+		},
+		// Scrolls to a note's objective and briefly highlights it, like the margin buttons do.
+		revealRow(group) {
+			if (group.glo === null) return;
+			const row = document.querySelector(
+				`[data-row="${group.glo}-${group.slo ?? 0}"]`,
+			);
+			row?.scrollIntoView({ behavior: "smooth", block: "center" });
+			this.hoverRow(group.glo, group.slo);
+			clearTimeout(this.revealTimer);
+			this.revealTimer = setTimeout(() => {
+				if (this.hover.glo === group.glo && this.hover.slo === group.slo)
+					this.hoverRow(null);
+			}, 1600);
+		},
+		tableName(table) {
+			return table.title.trim() || "Untitled table";
+		},
+		editedAgo(table) {
+			const seconds = (table.updatedAt - Date.now()) / 1000;
+			if (seconds > -60) return "just now";
+			if (seconds > -3600)
+				return relativeTime.format(Math.round(seconds / 60), "minute");
+			if (seconds > -86400)
+				return relativeTime.format(Math.round(seconds / 3600), "hour");
+			if (seconds > -86400 * 7)
+				return relativeTime.format(Math.round(seconds / 86400), "day");
+			return new Date(table.updatedAt).toLocaleDateString(undefined, {
+				day: "numeric",
+				month: "short",
+				year: "numeric",
+			});
+		},
+		persist(table) {
+			try {
+				writeTable(table);
+				this.storageError = "";
+			} catch (error) {
+				this.storageError =
+					"Your changes could not be saved in this browser (" +
+					error.message +
+					"). Export a backup to keep a copy.";
+			}
+		},
+		syncFromStorage() {
+			const stored = readTables();
+			const current = this.table;
+			if (current && !stored.some((table) => table.id === current.id))
+				stored.push(current);
+			this.tables = stored;
+		},
+		closeMenu() {
+			this.menuOpen = false;
+		},
+		// Opens a table, dropping the one being left if nothing was ever typed into it.
+		openTable(table) {
+			const leaving = this.table;
+			if (leaving && leaving.id !== table.id && isEmptyTable(leaving)) {
+				this.tables = this.tables.filter((t) => t.id !== leaving.id);
+			}
+			if (!this.tables.includes(table)) this.tables.push(table);
 
-      file.text().then((json) => {
-        try {
-          const table = createTable(parseBackup(json));
-          this.openTable(table);
-          this.persist(table);
-        } catch (error) {
-          this.importError = `Could not import ${file.name}: ${error.message}`;
-        }
-      });
-    },
-    addGlo() {
-      this.glos.push({
-        id: this.glos.length + 1,
-        description: '',
-        slos: [
-          {
-            id: this.glos.length + 1 + '.1',
-            description: '',
-            knowledge: '',
-            cognitive: '',
-          },
-        ],
-      });
-    },
-    addSlo(gloId) {
-      const sloId = gloId + '.' + (this.glos[gloId - 1].slos.length + 1);
-      this.glos[gloId - 1].slos.push({
-        id: sloId,
-        description: '',
-        knowledge: '',
-        cognitive: '',
-      });
-    },
-    removeSlo(gloId, sloId) {
-      if (this.glos.length == 1 && this.glos[gloId].slos.length == 1) {
-        this.glos = [];
-        return;
-      }
+			this.currentId = table.id;
+			this.importError = "";
+			writeCurrentId(table.id);
+			this.closeMenu();
+		},
+		newTable() {
+			if (isEmptyTable(this.table)) {
+				this.closeMenu();
+				return;
+			}
+			this.openTable(createTable());
+		},
+		duplicateTable() {
+			// A JSON round trip deep-copies the reactive table (structuredClone rejects Vue proxies).
+			const copy = createTable({
+				...parseBackup(toBackup(this.table)),
+				title: `${this.tableName(this.table)} (copy)`,
+			});
+			this.openTable(copy);
+			this.persist(copy);
+		},
+		deleteCurrentTable() {
+			if (
+				!confirm(
+					`Delete "${this.tableName(this.table)}"? This cannot be undone.`,
+				)
+			)
+				return;
 
-      if (this.glos[gloId].slos.length == 1) {
-        this.glos.splice(gloId, 1);
-      } else {
-        this.glos[gloId].slos.splice(sloId, 1);
-      }
+			const id = this.currentId;
+			deleteTable(id);
+			this.tables = this.tables.filter((table) => table.id !== id);
+			this.openTable(this.sortedTables[0] ?? createTable());
+		},
+		exportBackup() {
+			const file = new Blob([toBackup(this.table)], {
+				type: "application/json",
+			});
+			downloadBlob(
+				file,
+				`${this.tableName(this.table).replace(/[\\/:*?"<>|]/g, "-")}.json`,
+			);
+			this.closeMenu();
+		},
+		importBackup(event) {
+			const file = event.target.files[0];
+			// Allow importing the same file again later.
+			event.target.value = "";
+			if (!file) return;
 
-      for (let i = gloId; i < this.glos.length; i++) {
-        this.glos[i].id = i + 1;
-
-        for (let j = sloId; j < this.glos[i].slos.length; j++) {
-          this.glos[i].slos[j].id = i + 1 + '.' + (j + 1);
-        }
-      }
-    },
-    promoteSlo(gloId, sloId) {
-      this.glos[gloId].slos.splice(sloId - 1, 0, this.glos[gloId].slos[sloId]);
-      this.glos[gloId].slos.splice(sloId + 1, 1);
-      this.glos[gloId].slos[sloId].id = gloId + 1 + '.' + (sloId + 1);
-      this.glos[gloId].slos[sloId - 1].id = gloId + 1 + '.' + sloId;
-    },
-    demoteSlo(gloId, sloId) {
-      this.glos[gloId].slos.splice(sloId + 2, 0, this.glos[gloId].slos[sloId]);
-      this.glos[gloId].slos.splice(sloId, 1);
-      this.glos[gloId].slos[sloId].id = gloId + 1 + '.' + (sloId + 1);
-      this.glos[gloId].slos[sloId + 1].id = gloId + 1 + '.' + (sloId + 2);
-    },
-    removeGlo(gloId) {
-      if (this.glos.length == 1) {
-        this.glos = [];
-        return;
-      }
-
-      this.glos.splice(gloId, 1);
-
-      for (let i = gloId; i < this.glos.length; i++) {
-        this.glos[i].id = i + 1;
-
-        for (let j = 0; j < this.glos[i].slos.length; j++) {
-          this.glos[i].slos[j].id = i + 1 + '.' + (j + 1);
-        }
-      }
-    },
-    promoteGlo(gloId) {
-      for (let j = 0; j < this.glos[gloId].slos.length; j++) {
-        this.glos[gloId].slos[j].id = gloId + '.' + (j + 1);
-      }
-
-      for (let j = 0; j < this.glos[gloId - 1].slos.length; j++) {
-        this.glos[gloId - 1].slos[j].id = gloId + 1 + '.' + (j + 1);
-      }
-
-      this.glos.splice(gloId - 1, 0, this.glos[gloId]);
-      this.glos.splice(gloId + 1, 1);
-      this.glos[gloId].id = gloId + 1;
-      this.glos[gloId - 1].id = gloId;
-    },
-    demoteGlo(gloId) {
-      for (let j = 0; j < this.glos[gloId].slos.length; j++) {
-        this.glos[gloId].slos[j].id = gloId + 2 + '.' + (j + 1);
-      }
-
-      for (let j = 0; j < this.glos[gloId + 1].slos.length; j++) {
-        this.glos[gloId + 1].slos[j].id = gloId + 1 + '.' + (j + 1);
-      }
-
-      this.glos.splice(gloId + 2, 0, this.glos[gloId]);
-      this.glos.splice(gloId, 1);
-      this.glos[gloId].id = gloId + 1;
-      this.glos[gloId + 1].id = gloId + 2;
-    },
-    async exportToFile() {
-      const { exportToDocx } = await import('./export-docx.js');
-      const blob = await exportToDocx(this.title, this.description, this.glos);
-      downloadBlob(blob, 'Table of Objectives - ' + this.tableName(this.table).replace(/[\\/:*?"<>|]/g, '-') + '.docx');
-    },
-    showVerbs() {
-      this.$refs.verbs.open();
-    },
-  },
+			file.text().then((json) => {
+				try {
+					const table = createTable(parseBackup(json));
+					this.openTable(table);
+					this.persist(table);
+				} catch (error) {
+					this.importError = `Could not import ${file.name}: ${error.message}`;
+				}
+			});
+		},
+		addGlo() {
+			ops.addGlo(this.glos);
+		},
+		addSlo(gloIndex) {
+			ops.addSlo(this.glos, gloIndex);
+		},
+		moveSlo(gloIndex, sloIndex, delta) {
+			ops.moveSlo(this.glos, gloIndex, sloIndex, delta);
+			this.hoverRow(null);
+		},
+		moveGlo(gloIndex, delta) {
+			ops.moveGlo(this.glos, gloIndex, delta);
+			this.hoverRow(null);
+		},
+		removeSlo(gloIndex, sloIndex) {
+			const removed = this.glos[gloIndex].slos[sloIndex].id;
+			this.withUndo(`Deleted ${removed}`, () =>
+				ops.removeSlo(this.glos, gloIndex, sloIndex),
+			);
+		},
+		removeGlo(gloIndex) {
+			const glo = this.glos[gloIndex];
+			const count = glo.slos.length;
+			this.withUndo(
+				`Deleted ${glo.id} and its ${count === 1 ? "specific objective" : `${count} specific objectives`}`,
+				() => ops.removeGlo(this.glos, gloIndex),
+			);
+		},
+		// Runs a deletion and offers to undo it until the next edit, a table switch, or a timeout.
+		withUndo(message, remove) {
+			const before = JSON.stringify(this.glos);
+			remove();
+			// Rows shift under the pointer without a mouseleave, so drop the margin highlight.
+			this.hoverRow(null);
+			this.undo = {
+				tableId: this.currentId,
+				before,
+				after: JSON.stringify(this.glos),
+				message,
+			};
+			clearTimeout(this.undoTimer);
+			this.undoTimer = setTimeout(() => (this.undo = null), 8000);
+		},
+		undoDelete() {
+			const undo = this.undo;
+			if (
+				!undo ||
+				undo.tableId !== this.currentId ||
+				JSON.stringify(this.glos) !== undo.after
+			)
+				return;
+			this.glos = JSON.parse(undo.before);
+			this.undo = null;
+		},
+		async exportToFile() {
+			const { exportToDocx } = await import("./export-docx.js");
+			const blob = await exportToDocx(this.title, this.description, this.glos);
+			downloadBlob(
+				blob,
+				"Table of Objectives - " +
+					this.tableName(this.table).replace(/[\\/:*?"<>|]/g, "-") +
+					".docx",
+			);
+		},
+		showVerbs() {
+			this.$refs.verbs.open();
+		},
+	},
 };
 
 function downloadBlob(blob, filename) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 0);
+	const a = document.createElement("a");
+	a.href = URL.createObjectURL(blob);
+	a.download = filename;
+	a.click();
+	setTimeout(() => URL.revokeObjectURL(a.href), 0);
 }
 </script>
 
@@ -494,12 +600,22 @@ function downloadBlob(blob, filename) {
       <span class="hidden font-serif text-[1.0625rem] font-semibold tracking-tight whitespace-nowrap sm:inline">Table of Objectives</span>
       <span class="hidden text-base-content/25 sm:inline">/</span>
 
-      <div class="dropdown min-w-0">
-        <div tabindex="0" role="button" class="tb-btn min-w-0 font-normal" title="Switch table">
+      <div ref="menu" class="relative min-w-0">
+        <button
+          type="button"
+          class="tb-btn w-full min-w-0 font-normal"
+          title="Switch table"
+          aria-haspopup="true"
+          :aria-expanded="menuOpen"
+          @click="menuOpen = !menuOpen"
+        >
           <span class="truncate">{{ tableName(table) }}</span>
           <ChevronDown class="size-3.5! shrink-0" />
-        </div>
-        <div tabindex="0" class="dropdown-content z-30 mt-1 w-80 rounded-box border border-base-300 bg-base-100 py-1 text-sm shadow-lg shadow-black/5">
+        </button>
+        <div
+          v-if="menuOpen"
+          class="absolute top-full left-0 z-30 mt-1 w-80 rounded-box border border-base-300 bg-base-100 py-1 text-sm shadow-lg shadow-black/5"
+        >
           <ul class="max-h-72 overflow-y-auto py-1">
             <li v-for="item in sortedTables" :key="item.id">
               <button type="button" class="flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-base-200" @click="openTable(item)">
@@ -607,8 +723,8 @@ function downloadBlob(blob, filename) {
               <td class="cell py-8 text-center text-base-content/45" colspan="4">No objectives yet.</td>
               <td class="margin" colspan="2"></td>
             </tr>
-            <template v-for="(glo, gloIndex) in glos" :key="glo.id">
-              <tr v-for="(slo, sloIndex) in glo.slos" :key="slo.id" :data-row="gloIndex + '-' + sloIndex">
+            <template v-for="(glo, gloIndex) in glos" :key="keyOf(glo)">
+              <tr v-for="(slo, sloIndex) in glo.slos" :key="keyOf(slo)" :data-row="`${gloIndex}-${sloIndex}`">
                 <td v-if="sloIndex === 0" class="cell relative" :class="highlight(gloIndex, -1)" :rowspan="glo.slos.length + 1">
                   <span v-if="cellDot(gloIndex, null, 'description')" class="note-dot" v-bind="cellDot(gloIndex, null, 'description')"></span>
                   <div class="flex gap-3">
@@ -664,8 +780,8 @@ function downloadBlob(blob, filename) {
                   @focusin="hoverRow(gloIndex, sloIndex)"
                   @focusout="hoverRow(null)"
                 >
-                  <button type="button" class="tool" title="Move specific objective up" :disabled="sloIndex === 0" @click="promoteSlo(gloIndex, sloIndex)"><ArrowUp class="size-3.5" /></button>
-                  <button type="button" class="tool" title="Move specific objective down" :disabled="sloIndex === glo.slos.length - 1" @click="demoteSlo(gloIndex, sloIndex)"><ArrowDown class="size-3.5" /></button>
+                  <button type="button" class="tool" title="Move specific objective up" :disabled="sloIndex === 0" @click="moveSlo(gloIndex, sloIndex, -1)"><ArrowUp class="size-3.5" /></button>
+                  <button type="button" class="tool" title="Move specific objective down" :disabled="sloIndex === glo.slos.length - 1" @click="moveSlo(gloIndex, sloIndex, 1)"><ArrowDown class="size-3.5" /></button>
                   <button type="button" class="tool danger" title="Delete specific objective" @mouseenter="hover.danger = true" @mouseleave="hover.danger = false" @focus="hover.danger = true" @blur="hover.danger = false" @click="removeSlo(gloIndex, sloIndex)"><Trash2 class="size-3.5" /></button>
                 </td>
                 <td
@@ -678,15 +794,15 @@ function downloadBlob(blob, filename) {
                   @focusout="hoverRow(null)"
                 >
                   <div class="flex flex-col">
-                    <button type="button" class="tool" title="Move general objective up" :disabled="gloIndex === 0" @click="promoteGlo(gloIndex)"><ArrowUp class="size-3.5" /></button>
-                    <button type="button" class="tool" title="Move general objective down" :disabled="gloIndex === glos.length - 1" @click="demoteGlo(gloIndex)"><ArrowDown class="size-3.5" /></button>
+                    <button type="button" class="tool" title="Move general objective up" :disabled="gloIndex === 0" @click="moveGlo(gloIndex, -1)"><ArrowUp class="size-3.5" /></button>
+                    <button type="button" class="tool" title="Move general objective down" :disabled="gloIndex === glos.length - 1" @click="moveGlo(gloIndex, 1)"><ArrowDown class="size-3.5" /></button>
                     <button type="button" class="tool danger" title="Delete general objective and its specific objectives" @mouseenter="hover.danger = true" @mouseleave="hover.danger = false" @focus="hover.danger = true" @blur="hover.danger = false" @click="removeGlo(gloIndex)"><Trash2 class="size-3.5" /></button>
                   </div>
                 </td>
               </tr>
               <tr>
                 <td class="cell py-1" :class="highlight(gloIndex, -1)" colspan="3">
-                  <button type="button" class="add-link inline-flex items-center gap-1" @click="addSlo(glo.id)">
+                  <button type="button" class="add-link inline-flex items-center gap-1" @click="addSlo(gloIndex)">
                     <Plus class="size-3.5" /> Add specific objective
                   </button>
                 </td>
@@ -707,7 +823,7 @@ function downloadBlob(blob, filename) {
         <div class="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <h2 class="text-xs font-semibold tracking-wider text-base-content/60 uppercase">Verify</h2>
           <span class="text-xs text-base-content/60">
-            <template v-if="verifySummary.length">{{ verifySummary.map(([, n, word]) => n + ' ' + word).join(' · ') }}</template>
+            <template v-if="verifySummary.length">{{ verifySummary.map(([, n, word]) => `${n} ${word}`).join(' · ') }}</template>
             <template v-else>No issues found.</template>
           </span>
           <button
@@ -721,7 +837,7 @@ function downloadBlob(blob, filename) {
         </div>
 
         <ol v-if="noteGroups.length" class="divide-y divide-base-300 border-y border-base-300 text-sm">
-          <li v-for="group in noteGroups" :key="group.glo + ':' + group.slo" class="flex items-baseline gap-4 py-2.5">
+          <li v-for="group in noteGroups" :key="`${group.glo}:${group.slo}`" class="flex items-baseline gap-4 py-2.5">
             <button
               type="button"
               class="w-14 shrink-0 text-left font-semibold tabular-nums"
@@ -779,6 +895,15 @@ function downloadBlob(blob, filename) {
     Your tables are saved in this browser only and don't sync to other browsers or devices.
     Use <em>Export backup</em> in the table menu to keep a copy.
   </footer>
+
+  <div
+    v-if="undo"
+    role="status"
+    class="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-4 rounded bg-neutral px-4 py-2 text-sm text-neutral-content shadow-lg"
+  >
+    <span>{{ undo.message }}</span>
+    <button type="button" class="font-semibold underline-offset-2 hover:underline" @click="undoDelete()">Undo</button>
+  </div>
 
   <VerbsDialog ref="verbs" :accepted-verbs="acceptedVerbs" @remove-verb="removeAcceptedVerb" />
 </template>

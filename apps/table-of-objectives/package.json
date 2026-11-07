@@ -1,30 +1,37 @@
 {
-  "name": "table-of-objectives",
-  "version": "2.0.0",
-  "private": true,
-  "type": "module",
-  "description": "Build and verify a table of learning objectives using Bloom's taxonomy, and export it to Word.",
-  "license": "ISC",
-  "engines": {
-    "node": ">=20.19"
-  },
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "test": "vitest run"
-  },
-  "dependencies": {
-    "@lucide/vue": "^1.70.0",
-    "docx": "^9.15.2",
-    "vue": "^3.5.45"
-  },
-  "devDependencies": {
-    "@tailwindcss/vite": "^4.3.5",
-    "@vitejs/plugin-vue": "^6.0.10",
-    "daisyui": "^5.7.50",
-    "tailwindcss": "^4.3.5",
-    "vite": "^8.3.6",
-    "vitest": "^5.1.0"
-  }
+	"name": "table-of-objectives",
+	"version": "2.0.0",
+	"private": true,
+	"type": "module",
+	"description": "Build and verify a table of learning objectives using Bloom's taxonomy, and export it to Word.",
+	"license": "ISC",
+	"engines": {
+		"node": ">=20.19"
+	},
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"test": "vitest run",
+		"lint": "biome check .",
+		"typecheck": "tsc --project jsconfig.json --noEmit",
+		"check": "npm run lint && npm run typecheck && npm test"
+	},
+	"dependencies": {
+		"@fontsource-variable/source-serif-4": "^5.3.1",
+		"@lucide/vue": "^1.70.0",
+		"docx": "^9.15.2",
+		"vue": "^3.5.45"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.7",
+		"@tailwindcss/vite": "^4.3.5",
+		"@vitejs/plugin-vue": "^6.0.10",
+		"daisyui": "^5.7.50",
+		"tailwindcss": "^4.3.5",
+		"typescript": "^7.0.2",
+		"vite": "^8.3.6",
+		"vite-plugin-pwa": "^2.0.0",
+		"vitest": "^5.1.0"
+	}
 }

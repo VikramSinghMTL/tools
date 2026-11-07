@@ -1,49 +1,52 @@
 <script setup>
-import { computed, ref } from 'vue';
-import { Copy, Search, X } from '@lucide/vue';
-import blooms from './blooms.js';
+import { Copy, Search, X } from "@lucide/vue";
+import { computed, ref } from "vue";
+import blooms from "./blooms.js";
 
 const props = defineProps({
-  // Words the user accepted as verbs in Verify.
-  acceptedVerbs: { type: Array, default: () => [] },
+	// Words the user accepted as verbs in Verify.
+	acceptedVerbs: { type: Array, default: () => [] },
 });
-const emit = defineEmits(['remove-verb']);
+const emit = defineEmits(["remove-verb"]);
 
 const dialog = ref(null);
 const search = ref(null);
-const query = ref('');
+const query = ref("");
 const toast = ref(null); // { ok: boolean, text: string }
 let toastTimer;
 
 const levels = computed(() => {
-  const q = query.value.trim().toLowerCase();
-  return Object.entries(blooms).map(([level, verbs]) => ({
-    level,
-    verbs: verbs.filter((verb) => verb.toLowerCase().includes(q)),
-  }));
+	const q = query.value.trim().toLowerCase();
+	return Object.entries(blooms).map(([level, verbs]) => ({
+		level,
+		verbs: verbs.filter((verb) => verb.toLowerCase().includes(q)),
+	}));
 });
 
 function open() {
-  query.value = '';
-  toast.value = null;
-  dialog.value.showModal();
-  search.value.focus();
+	query.value = "";
+	toast.value = null;
+	dialog.value.showModal();
+	search.value.focus();
 }
 
 async function copy(verb) {
-  try {
-    await navigator.clipboard.writeText(verb);
-    toast.value = { ok: true, text: `Copied “${verb}”` };
-  } catch {
-    toast.value = { ok: false, text: 'Couldn’t copy. Your browser blocked clipboard access.' };
-  }
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (toast.value = null), 1800);
+	try {
+		await navigator.clipboard.writeText(verb);
+		toast.value = { ok: true, text: `Copied “${verb}”` };
+	} catch {
+		toast.value = {
+			ok: false,
+			text: "Couldn’t copy. Your browser blocked clipboard access.",
+		};
+	}
+	clearTimeout(toastTimer);
+	toastTimer = setTimeout(() => (toast.value = null), 1800);
 }
 
 const yourVerbs = computed(() => {
-  const q = query.value.trim().toLowerCase();
-  return props.acceptedVerbs.filter((verb) => verb.includes(q));
+	const q = query.value.trim().toLowerCase();
+	return props.acceptedVerbs.filter((verb) => verb.includes(q));
 });
 
 defineExpose({ open });
@@ -57,12 +60,13 @@ defineExpose({ open });
           <h2 class="font-serif text-2xl font-semibold tracking-tight">Example verbs</h2>
           <p class="mt-1 text-sm text-base-content/60">Ideas for each level of Bloom's taxonomy, from lower-order (1) to higher-order (6) thinking. Any verb works. Click one to copy it.</p>
         </div>
-        <label class="flex w-full items-center gap-2 border-b border-base-content/30 py-1 text-sm focus-within:border-primary sm:w-56">
+        <div class="flex w-full items-center gap-2 border-b border-base-content/30 py-1 text-sm focus-within:border-primary sm:w-56">
           <Search class="size-3.5 opacity-50" />
-          <input ref="search" v-model="query" type="search" placeholder="Find a verb" class="w-full bg-transparent outline-none">
-        </label>
+          <input ref="search" v-model="query" type="search"
+            aria-label="Find a verb" placeholder="Find a verb" class="w-full bg-transparent outline-none">
+        </div>
         <form method="dialog" class="absolute top-3 right-3">
-          <button class="tool" title="Close"><X class="size-4" /></button>
+          <button type="submit" class="tool" title="Close"><X class="size-4" /></button>
         </form>
       </div>
 
@@ -124,6 +128,6 @@ defineExpose({ open });
       {{ toast.text }}
     </div>
 
-    <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    <form method="dialog" class="modal-backdrop"><button type="submit">close</button></form>
   </dialog>
 </template>
