@@ -6,7 +6,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"includes": ["**", "!src/verbs-en.js"]
+		"includes": ["**", "!src/verbs-en.js", "!.vscode"]
 	},
 	"css": {
 		"parser": {
