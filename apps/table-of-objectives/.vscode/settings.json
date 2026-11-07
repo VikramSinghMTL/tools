@@ -1,6 +1,4 @@
 {
-    "cSpell.words": [
-        "glos",
-        "slos"
-    ]
+	"cSpell.words": ["glos", "slos"],
+	"liveServer.settings.port": 5501
 }
